@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
+import { GrPowerReset } from "react-icons/gr";
 
 // register dagre layout
 cytoscape.use(dagre);
@@ -9,6 +10,7 @@ cytoscape.use(dagre);
 function ArchitectureGraph({ githubURL }) {
   const [graph, setGraph] = useState(null);
   const [selected, setSelected] = useState(null);
+  const cyRef = useRef(null); // ⬅️ For zoom controls
 
   useEffect(() => {
     if (!githubURL) return;
@@ -25,11 +27,9 @@ function ArchitectureGraph({ githubURL }) {
 
   if (!graph) return <div>Loading architecture...</div>;
 
-  // build Cytoscape elements safely
   const nodeIds = new Set(graph.nodes.map((n) => n.id));
   const elements = [];
 
-  // add nodes
   graph.nodes.forEach((n) => {
     elements.push({
       data: {
@@ -48,7 +48,6 @@ function ArchitectureGraph({ githubURL }) {
     });
   });
 
-  // add edges and create placeholder nodes for missing targets/sources
   graph.edges.forEach((e, i) => {
     if (!nodeIds.has(e.source)) {
       elements.push({
@@ -87,7 +86,6 @@ function ArchitectureGraph({ githubURL }) {
     });
   });
 
-  // Cytoscape stylesheet
   const stylesheet = [
     {
       selector: "node",
@@ -108,7 +106,11 @@ function ArchitectureGraph({ githubURL }) {
     },
     {
       selector: 'node[type="package"]',
-      style: { "border-width": 2, "border-color": "#555", "background-opacity": 0.6 },
+      style: {
+        "border-width": 2,
+        "border-color": "#555",
+        "background-opacity": 0.6,
+      },
     },
     {
       selector: "edge",
@@ -126,15 +128,46 @@ function ArchitectureGraph({ githubURL }) {
     },
   ];
 
+  const handleZoomIn = () => {
+    if (cyRef.current) {
+      const cy = cyRef.current;
+      const zoom = cy.zoom();
+      cy.zoom(zoom + 0.2); 
+      cy.center(); 
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (cyRef.current) {
+      const cy = cyRef.current;
+      const zoom = cy.zoom();
+      cy.zoom(zoom - 0.2); 
+      cy.center(); 
+    }
+  };
+
+  const handleResetZoom = () => {
+    if (cyRef.current) {
+      cyRef.current.fit();
+    }
+  };
+
   return (
-    <div style={{ display: "flex", gap: "12px" }}>
-      <div style={{ flex: 1 }}>
+    <>
+      <div style={{ flex: 1, position: "relative" }}>
+        <div className="zoom-buttons">
+          <button onClick={handleZoomIn} className="plus-button">+</button>
+          <button onClick={handleZoomOut} className="minus-button">-</button>
+          <button onClick={handleResetZoom} className="reset-button"><GrPowerReset /></button>
+        </div>
+
         <CytoscapeComponent
           elements={elements}
-          style={{ width: "100%", height: "600px" }}
-          layout={{ name: "dagre", rankDir: "LR" }}
+          style={{ width: "100%", height: "180px" }}
+          layout={{ name: "dagre", rankDir: "TB" }}
           stylesheet={stylesheet}
           cy={(cy) => {
+            cyRef.current = cy; // Store reference
             cy.on("tap", "node", (evt) => {
               const node = evt.target;
               setSelected({
@@ -145,34 +178,27 @@ function ArchitectureGraph({ githubURL }) {
                 health: node.data("health"),
               });
             });
-            // zoom to fit
-            setTimeout(() => cy.fit(), 300);
+            setTimeout(() => {
+              cy.resize();
+              cy.fit();
+            }, 300);
           }}
         />
       </div>
 
-      <div
-        style={{
-          width: "300px",
-          borderLeft: "1px solid #eee",
-          paddingLeft: "12px",
-        }}
-      >
-        <h4>Details</h4>
+      <div>
         {selected ? (
           <div>
             <p>
-              <b>{selected.label}</b>
+              <b>Details: {selected.label}</b>
             </p>
-            <p>Type: {selected.type}</p>
-            <p>Complexity: {selected.complexity}</p>
-            <p>Health score: {selected.health}</p>
+            <p>Type: {selected.type} | Complexity: {selected.complexity} | Health score: {selected.health}</p>
           </div>
         ) : (
           <p>Click a node to view details</p>
         )}
       </div>
-    </div>
+    </>
   );
 }
 

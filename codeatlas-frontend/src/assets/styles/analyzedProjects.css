@@ -191,3 +191,23 @@
   border-top: 1px solid #ddd;
   background: #fff;        
 }
+
+/* graph */
+.zoom-buttons {
+  position: absolute;
+  top: 10;
+  left: 10;
+  z-index: 10;
+}
+
+.plus-button, .minus-button, .reset-button {
+  padding: 6px 12px;
+  font-size: 16px;
+  border-radius: 5px;
+  background-color: white;
+  border: 2px solid #FF4B00;
+  cursor: pointer;
+  color: black;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  margin-right: 10px;
+}
