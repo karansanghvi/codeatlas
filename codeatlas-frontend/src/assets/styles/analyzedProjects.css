@@ -1,0 +1,193 @@
+/* Card Title */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px; 
+  background-color: #FF4B00; 
+  color: white; 
+  padding: 12px 18px;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+}
+
+/* GitHub URL */
+.github-button {
+  padding: 8px 120px;
+  border-radius: 12px;
+  background-color: white;
+  border: 2px solid #FF4B00;
+  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  font-size: 18px;
+}
+
+/* Bento Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Individual Cards */
+.repo-card, .languages-card, .contributors-card, .file-card, .file-tree-container {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #E4E4E4; 
+}
+
+.repo-card:hover, .languages-card:hover, .contributors-card:hover, .file-card, .file-tree-container:hover {
+  transform: translateY(-3px);
+}
+
+.repo-card h3, .languages-card h3, .contributors-card h3 {
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.view-button {
+  padding: 12px 70px;
+  border-radius: 12px;
+  background-color: #FF4B00;
+  color: white;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 15px;
+}
+
+.view-button:hover {
+  background-color: #FF4B00;
+}
+
+
+/* Repo Stats */
+.repo-stats {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* Languages */
+.language-badge {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #1a73e8;
+  padding: 5px 10px;
+  border-radius: 10px;
+  margin: 3px;
+  font-size: 12px;
+}
+
+/* Contributors */
+.contributors img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 5px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* File Tree */
+.file-tree {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  font-size: 14px;
+}
+
+.file-tree p {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.file-item, .folder-item {
+  margin: 5px 0;
+}
+
+.folder-name {
+  cursor: pointer;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+.folder-name:hover {
+  color: #1a73e8;
+}
+
+.file-item a {
+  text-decoration: none;
+  color: #1a73e8;
+  transition: color 0.2s ease-in-out;
+}
+
+.file-item a:hover {
+  text-decoration: underline;
+  color: #0b59d0;
+}
+
+.folder-item ul {
+  transition: max-height 0.3s ease;
+  overflow: hidden;
+}
+
+/* modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.modal-body {
+  flex: 1;                  
+  overflow-y: auto;         
+  margin: 10px 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+  background: #fff;        
+}

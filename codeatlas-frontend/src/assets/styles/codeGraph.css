@@ -1,0 +1,6 @@
+.code-graph-container {
+  height: 500px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 10px;
+}
