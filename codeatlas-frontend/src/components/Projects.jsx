@@ -7,6 +7,8 @@ function Projects() {
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRepoURL, setSelectedRepoURL] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [repoToDelete, setRepoToDelete] = useState(null);
 
   // Fetch repos from backend
   useEffect(() => {
@@ -36,6 +38,7 @@ function Projects() {
   }
 
   return (
+    <>
     <div className="projects-section">
       <h2>Projects</h2>
       <div className="projects-grid">
@@ -43,16 +46,61 @@ function Projects() {
           <div key={repo.id} className="project-card">
             <h3>{repo.name}</h3>
             <br />
-            <button
-              className="project-button"
-              onClick={() => setSelectedRepoURL(repo.github_url)}
-            >
-              View Details
-            </button>
+            <div className="button-container">
+              <button
+                className="project-button"
+                onClick={() => setSelectedRepoURL(repo.github_url)}
+              >
+                View 
+              </button>
+              <button
+                className="delete-button"
+                onClick={() => {
+                  setRepoToDelete(repo);
+                  setShowDeleteModal(true);
+                }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
     </div>
+
+    {showDeleteModal && (
+      <div className="modal-overlay">
+        <div className="modal">
+          <p>Are you sure you want to delete <b>{repoToDelete?.name}</b>?</p>
+          <div className="modal-actions">
+            <button
+              onClick={async () => {
+                try {
+                  await fetch(`http://localhost:5000/api/repositories/${repoToDelete.id}`, {
+                    method: "DELETE",
+                  });
+                  // remove deleted repo from state
+                  setRepos(repos.filter((r) => r.id !== repoToDelete.id));
+                  setShowDeleteModal(false);
+                } catch (err) {
+                  console.error("Failed to delete repo:", err);
+                }
+              }}
+              className="yes-button"
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="no-button"
+            >
+              No
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

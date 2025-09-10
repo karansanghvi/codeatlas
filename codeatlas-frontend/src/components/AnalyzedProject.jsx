@@ -133,7 +133,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
             <h3 style={{ marginBottom: '5px' }}>File Structure</h3>
             <p style={{ marginBottom: '5px' }}>Click the below button to view the file structure</p>
             <button 
-              className="github-button"
+              className="dashboard-button"
               onClick={() => setIsFileModalOpen(true)}
             >
               View
@@ -146,10 +146,9 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         {/* Code Architecture Card */}
         <div className="file-card">
           <h3 style={{ marginBottom: '5px' }}>Code Architecture</h3>
-          <p style={{ marginBottom: '5px' }}>Visualize classes, functions, and dependencies</p>
-          <br />
+          <p style={{ marginBottom: '10px' }}>Visualize classes, functions, and dependencies</p>
           <button 
-            className="github-button"
+            className="dashboard-button"
             onClick={() => setIsArchModalOpen(true)}
           >
             View Architecture

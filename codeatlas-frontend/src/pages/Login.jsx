@@ -3,6 +3,7 @@ import "../assets/styles/login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/auth";
+import login from "../assets/images/login_illustration.png";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -26,11 +27,17 @@ function Login() {
 
   return (
     <>
+    <header className="app-header">
+      <Link to="/" style={{ textDecoration: 'none' }}>
+        <h1 className="title">CodeAtlas</h1>
+      </Link>
+    </header>
     <div className="login-screen">
-      <div className="login-container">
+      <div className="login-image">
+        <img src={login} alt="Login" />
+      </div>
+      <div className="login-content">
         <h1>Login</h1>
-        <p>Welcome back! Let’s get you to today’s fun news in a flash.</p>
-
         <form className="login-form" onSubmit={handleLogin}>
           <div className="input-box">
             <label htmlFor="emailAddress">Email Address:</label>
@@ -46,11 +53,10 @@ function Login() {
 
           <button type="submit" className="login-btn">Login</button>
 
-          <p>Don't have an account? <Link to="/signup"><span>Signup</span></Link></p>
+          <p>Don't have an account? <Link to="/signup" style={{ textDecoration: 'none' }}><span>Signup</span></Link></p>
         </form>
       </div>
     </div>
-    <br/> <br/>
     </>
   );
 }

@@ -1,31 +1,70 @@
-.login-screen {
+.app-header {
+  width: 100%;
+  padding: 20px 40px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  position: fixed;
+}
+
+.title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: black;
+}
+
+/* .login-screen {
   display: flex;
   justify-content: center;
   align-items: center;
+} */
+.login-screen {
+  display: flex;
+  height: 80vh;
+  width: 100%;
+  margin-top: 90px;
 }
 
-.login-container {
-  background: #fff;
-  padding: 40px;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  width: 420px;
-  text-align: center;
+.login-image {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;  
+  align-items: center;
+  background-color: rgb(247, 242, 242);
 }
 
-.login-container h1 {
-  color: #FF0B23;
+.login-image img {
+  width: 80%;
+  height: 80%;
+  object-fit: cover;
+  display: block;
+}
+
+.login-content {
+  flex: 1;
+  padding: 60px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: white; 
+}
+
+.login-content h1 {
+  color: #FF4B00;
   font-size: 2.5rem;
   font-weight: 700;
 }
 
-.login-container p {
+.login-content p {
   margin-top: 5px;
   color: black;
   font-size: 1rem;
 }
 
-.login-container span {
+.login-content span {
     color: #FF0B23;
 }
 
@@ -94,16 +133,16 @@
 
 /* Tablet view */
 @media (max-width: 768px) {
-  .login-container {
+  .login-content {
     width: 90%;
     padding: 30px 20px;
   }
 
-  .login-container h1 {
+  .login-content h1 {
     font-size: 2rem;
   }
 
-  .login-container p {
+  .login-content p {
     font-size: 0.95rem;
   }
 
@@ -120,7 +159,7 @@
 
 /* Mobile view */
 @media (max-width: 480px) {
-  .login-container {
+  .login-content {
     width: 100%;
     padding: 25px 15px;
     border-radius: 10px;
@@ -129,11 +168,11 @@
     margin-top: 120px;
   }
 
-  .login-container h1 {
+  .login-content h1 {
     font-size: 1.8rem;
   }
 
-  .login-container p {
+  .login-content p {
     font-size: 0.9rem;
   }
 

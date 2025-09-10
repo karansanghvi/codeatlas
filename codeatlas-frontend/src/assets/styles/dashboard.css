@@ -41,6 +41,23 @@
   color: white;
 }
 
+/* Header */
+.dashboard-button {
+  padding: 10px 28px;
+  background-color: #FF4B00;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.dashboard-button:hover {
+  background-color: white;
+  border: 2px solid #FF4B00;
+  color: black;
+}
+
 /* Main content */
 .main-content {
   flex: 1;

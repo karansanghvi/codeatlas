@@ -1,16 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
+import { FaHandPointer, FaMinus, FaPlus, FaExclamationCircle } from "react-icons/fa";
 import { GrPowerReset } from "react-icons/gr";
+import "../assets/styles/analyzedProjects.css";
 
-// register dagre layout
 cytoscape.use(dagre);
 
 function ArchitectureGraph({ githubURL }) {
   const [graph, setGraph] = useState(null);
   const [selected, setSelected] = useState(null);
-  const cyRef = useRef(null); // ⬅️ For zoom controls
+  const [grabEnabled, setGrabEnabled] = useState(true);
+  const cyRef = useRef(null);
 
   useEffect(() => {
     if (!githubURL) return;
@@ -30,6 +32,7 @@ function ArchitectureGraph({ githubURL }) {
   const nodeIds = new Set(graph.nodes.map((n) => n.id));
   const elements = [];
 
+  // Prepare elements
   graph.nodes.forEach((n) => {
     elements.push({
       data: {
@@ -37,9 +40,14 @@ function ArchitectureGraph({ githubURL }) {
         label: n.label || n.id,
         type: n.type || "file",
         complexity: n.complexity || 0,
+        loc: n.loc || 0,
+        size: n.size || n.loc || 0,
         health: n.healthScore || 100,
+        issues: n.issues || [],
         color:
-          n.healthScore >= 75
+          n.complexity > 20
+            ? "#ff6b6b"
+            : n.healthScore >= 75
             ? "#8ce99a"
             : n.healthScore >= 40
             ? "#ffd166"
@@ -50,38 +58,20 @@ function ArchitectureGraph({ githubURL }) {
 
   graph.edges.forEach((e, i) => {
     if (!nodeIds.has(e.source)) {
-      elements.push({
-        data: {
-          id: e.source,
-          label: e.source,
-          type: "package",
-          complexity: 0,
-          health: 100,
-          color: "#9ec1cf",
-        },
-      });
+      elements.push({ data: { id: e.source, label: e.source, type: "package", complexity: 0, health: 100, color: "#9ec1cf" } });
       nodeIds.add(e.source);
     }
     if (!nodeIds.has(e.target)) {
-      elements.push({
-        data: {
-          id: e.target,
-          label: e.target,
-          type: "package",
-          complexity: 0,
-          health: 100,
-          color: "#9ec1cf",
-        },
-      });
+      elements.push({ data: { id: e.target, label: e.target, type: "package", complexity: 0, health: 100, color: "#9ec1cf" } });
       nodeIds.add(e.target);
     }
-
     elements.push({
       data: {
         id: `e${i}`,
         source: e.source,
         target: e.target,
         relation: e.relation,
+        frequency: e.frequency || 1,
       },
     });
   });
@@ -94,28 +84,30 @@ function ArchitectureGraph({ githubURL }) {
         "text-valign": "center",
         "text-halign": "center",
         "background-color": "data(color)",
+        width: "mapData(size, 0, 500, 30, 100)",
+        height: "mapData(complexity, 0, 50, 30, 80)",
         shape: "round-rectangle",
-        width: "label",
-        padding: "8px",
         "font-size": 10,
       },
     },
     {
-      selector: 'node[type="file"]',
-      style: { "border-width": 1, "border-color": "#333" },
+      selector: "node[complexity > 20]",
+      style: {
+        "border-width": 3,
+        "border-color": "#ff3b3b",
+      },
     },
     {
-      selector: 'node[type="package"]',
+      selector: "node[complexity <= 20]",
       style: {
-        "border-width": 2,
-        "border-color": "#555",
-        "background-opacity": 0.6,
+        "border-width": 1,
+        "border-color": "#333",
       },
     },
     {
       selector: "edge",
       style: {
-        width: 2,
+        width: "mapData(frequency, 1, 5, 2, 8)",
         "curve-style": "bezier",
         "target-arrow-shape": "triangle",
         "target-arrow-color": "#999",
@@ -128,77 +120,70 @@ function ArchitectureGraph({ githubURL }) {
     },
   ];
 
-  const handleZoomIn = () => {
-    if (cyRef.current) {
-      const cy = cyRef.current;
-      const zoom = cy.zoom();
-      cy.zoom(zoom + 0.2); 
-      cy.center(); 
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (cyRef.current) {
-      const cy = cyRef.current;
-      const zoom = cy.zoom();
-      cy.zoom(zoom - 0.2); 
-      cy.center(); 
-    }
-  };
-
-  const handleResetZoom = () => {
-    if (cyRef.current) {
-      cyRef.current.fit();
-    }
+  const zoomIn = () => cyRef.current && cyRef.current.zoom(cyRef.current.zoom() * 1.2);
+  const zoomOut = () => cyRef.current && cyRef.current.zoom(cyRef.current.zoom() / 1.2);
+  const resetZoom = () => cyRef.current && cyRef.current.fit();
+  const toggleGrab = () => {
+    if (!cyRef.current) return;
+    setGrabEnabled(!grabEnabled);
+    cyRef.current.userPanningEnabled(!grabEnabled);
   };
 
   return (
-    <>
+    <div style={{ display: "flex", gap: "12px" }}>
       <div style={{ flex: 1, position: "relative" }}>
-        <div className="zoom-buttons">
-          <button onClick={handleZoomIn} className="plus-button">+</button>
-          <button onClick={handleZoomOut} className="minus-button">-</button>
-          <button onClick={handleResetZoom} className="reset-button"><GrPowerReset /></button>
+        {/* Zoom Controls */}
+        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 10, display: "flex", gap: "6px", flexDirection: 'column' }}>
+          <button onClick={zoomIn} className="zoom-button"><FaPlus /></button>
+          <button onClick={zoomOut} className="zoom-button"><FaMinus /></button>
+          <button onClick={resetZoom} className="zoom-button"><GrPowerReset /></button>
+          <button onClick={toggleGrab} className="zoom-button">{grabEnabled ? <FaHandPointer /> : "🖐️"}</button>
         </div>
 
         <CytoscapeComponent
           elements={elements}
-          style={{ width: "100%", height: "180px" }}
-          layout={{ name: "dagre", rankDir: "TB" }}
+          style={{ width: "100%", height: "600px" }}
+          layout={{ name: "dagre", rankDir: "LR" }}
           stylesheet={stylesheet}
           cy={(cy) => {
-            cyRef.current = cy; // Store reference
+            cyRef.current = cy;
+
             cy.on("tap", "node", (evt) => {
-              const node = evt.target;
+              const n = evt.target;
               setSelected({
-                id: node.data("id"),
-                label: node.data("label"),
-                type: node.data("type"),
-                complexity: node.data("complexity"),
-                health: node.data("health"),
+                id: n.data("id"),
+                label: n.data("label"),
+                type: n.data("type"),
+                complexity: n.data("complexity"),
+                loc: n.data("loc"),
+                health: n.data("health"),
+                issues: n.data("issues"),
               });
             });
-            setTimeout(() => {
-              cy.resize();
-              cy.fit();
-            }, 300);
+
+            setTimeout(() => cy.fit(), 300);
           }}
         />
       </div>
 
-      <div>
+      {/* Detail Panel */}
+      <div style={{ width: "300px", borderLeft: "1px solid #eee", paddingLeft: "12px" }}>
         {selected ? (
           <div>
-            <p>
-              <b>Details: {selected.label}</b>
-            </p>
-            <p>Type: {selected.type} | Complexity: {selected.complexity} | Health score: {selected.health}</p>
+            <p><b>Details:</b> {selected.label}</p>
+            <p>Type: {selected.type}</p>
+            <p>Lines Of Code (LOC): {selected.loc}</p>
+            <p>Complexity: {selected.complexity}</p>
+            <p>Health: {selected.health}</p>
+            {selected.issues.length > 0 && (
+              <p>Issues: {selected.issues.map((i, idx) => <span key={idx}><FaExclamationCircle /> {i}<br/></span>)}</p>
+            )}
           </div>
         ) : (
           <p>Click a node to view details</p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

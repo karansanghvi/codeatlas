@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/auth";
+import signup from "../assets/images/signup_illustration.png";
 
 function Signup() {
   const [fullName, setFullName] = useState("");
@@ -37,8 +38,17 @@ function Signup() {
 
   return (
     <>
+    <header className="app-header">
+      <Link to="/" style={{ textDecoration: 'none' }}>
+        <h1 className="title">CodeAtlas</h1>
+      </Link>
+    </header>
     <div className="signup-screen">
-      <div className="signup-container">
+      <div className="signup-image">
+        <img src={signup} alt="Signup" />
+      </div>
+
+      <div className="signup-content">
         <h1>Signup</h1>
         <p>Join us to discover amazing stories made just for kids!</p>
 
@@ -47,7 +57,7 @@ function Signup() {
             <div className="input-box">
               <label htmlFor="fullName">Full Name:</label>
               <input type="text" id="fullName" placeholder="John Doe"
-                value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                value={fullName} onChange={(e) => setFullName(e.target.value)} style={{ marginRight: '10px' }} required />
             </div>
 
             <div className="input-box">
@@ -71,7 +81,7 @@ function Signup() {
 
           <button type="submit" className="login-btn">Signup</button>
 
-          <p>Already have an account? <Link to="/login"><span>Login</span></Link></p>
+          <p>Already have an account? <Link to="/login" style={{ textDecoration: 'none' }}><span>Login</span></Link></p>
         </form>
       </div>
     </div>

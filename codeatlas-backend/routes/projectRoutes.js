@@ -18,4 +18,17 @@ router.get("/repositories", async (req, res) => {
     }
 });
 
+// delete repo by id
+router.delete("/repositories/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await pool.query("DELETE FROM repositories WHERE id = $1", [id]);
+        res.json({ message: "Repository deleted successfully" });
+    } catch (err) {
+        console.error("Failed to delete repository:", err.message);
+        res.status(500).json({ error: "Failed to delete repository" });
+    }
+});
+
 module.exports = router;

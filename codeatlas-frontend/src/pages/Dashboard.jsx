@@ -3,11 +3,11 @@ import "../assets/styles/dashboard.css";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
-import AnalyzedProject from "../components/AnalyzedProject";
 import DashboardHome from "../components/DashboardHome";
 import Projects from "../components/Projects";
 import Analytics from "../components/Analytics";
 import Settings from "../components/Settings";
+import { Link } from "react-router-dom";
 
 function Dashboard() {
   const [fullName, setFullName] = useState("");
@@ -56,27 +56,21 @@ function Dashboard() {
         {/* Top bar */}
         <div className="top-bar">
           <input type="text" placeholder="Search..." className="search-bar" />
-          <div className="user-profile">{fullName || "User"}</div>
+          {/* <div className="user-profile">{fullName || "User"}</div> */}
+          <Link to="/login">
+            <button className="dashboard-button">Login</button>
+          </Link>
         </div>
 
         {activePage === "Dashboard" && (
-          // <DashboardHome
-          //   fullName={fullName}
-          //   githubURL={githubURL}
-          //   setGithubURL={setGithubURL}
-          //   isAnalyzing={isAnalyzing}
-          //   setIsAnalyzing={setIsAnalyzing}
-          //   setActivePage={setActivePage}
-          // />
           <DashboardHome
-  fullName={fullName}
-  githubURL={githubURL}
-  setGithubURL={setGithubURL}
-  isAnalyzing={isAnalyzing}
-  setIsAnalyzing={setIsAnalyzing}
-  setActivePage={setActivePage}   // <-- pass it here
-/>
-
+            fullName={fullName}
+            githubURL={githubURL}
+            setGithubURL={setGithubURL}
+            isAnalyzing={isAnalyzing}
+            setIsAnalyzing={setIsAnalyzing}
+            setActivePage={setActivePage}  
+          />
         )}
         {activePage === "Projects" && <Projects />}
         {activePage === "Analytics" && <Analytics />} 

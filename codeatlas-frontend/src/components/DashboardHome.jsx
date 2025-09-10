@@ -37,7 +37,7 @@ function DashboardHome({fullName, githubURL, setGithubURL, isAnalyzing, setIsAna
                   onChange={(e) => setGithubURL(e.target.value)}
                 />
                 <button
-                  className="analyze-button"
+                  className="dashboard-button"
                   onClick={handleAnalyzeClick}
                 >
                   Analyze
