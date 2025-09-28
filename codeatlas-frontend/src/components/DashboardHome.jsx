@@ -4,11 +4,33 @@ import "../assets/styles/dashboard.css";
 
 function DashboardHome({fullName, githubURL, setGithubURL, isAnalyzing, setIsAnalyzing, setActivePage}) {
 
-  const handleAnalyzeClick = () => {
-    if (githubURL.trim() !== "") {
-        setIsAnalyzing(true);
-    } else {
-        alert("Please enter a github url");
+  const handleAnalyzeClick = async () => {
+    if (githubURL.trim() === "") {
+      alert("Please enter a github url");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubURL }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.repoInfo.notAccessible) {
+          console.log("Repo is private and not accessible.");
+        } else {
+          console.log(`🔒 Repo is ${data.repoInfo.private ? "Private" : "Public"}`);
+          setIsAnalyzing(true);
+        }
+      } else {
+        console.error("❌ Error analyzing repo:", data.error);
+      }
+    } catch (err) {
+      console.error("❌ Failed to analyze repo:", err);
     }
   };
 

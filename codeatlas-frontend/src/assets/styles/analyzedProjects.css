@@ -50,9 +50,9 @@
   border: 1px solid #E4E4E4; 
 }
 
-.repo-card:hover, .languages-card:hover, .contributors-card:hover, .file-card, .file-tree-container:hover {
+/* .repo-card:hover, .languages-card:hover, .contributors-card:hover, .file-card, .file-tree-container:hover {
   transform: translateY(-3px);
-}
+} */
 
 .repo-card h3, .languages-card h3, .contributors-card h3 {
   margin-bottom: 10px;
@@ -73,10 +73,9 @@
   font-size: 15px;
 }
 
-.view-button:hover {
+/* .view-button:hover {
   background-color: #FF4B00;
-}
-
+} */
 
 /* Repo Stats */
 .repo-stats {
@@ -153,6 +152,14 @@
   overflow: hidden;
 }
 
+/* code architecture */
+.code-architecture-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 /* modal */
 .modal-overlay {
   position: fixed;
@@ -198,6 +205,9 @@
   top: 10;
   left: 10;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .plus-button, .minus-button, .reset-button {
@@ -210,4 +220,69 @@
   color: black;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
   margin-right: 10px;
+}
+
+/* Heatmap color scales */
+.color-empty {
+  fill: #eeeeee;
+}
+.color-scale-1 {
+  fill: #c6e48b;
+}
+.color-scale-2 {
+  fill: #7bc96f;
+}
+.color-scale-3 {
+  fill: #239a3b;
+}
+.color-scale-4 {
+  fill: #196127;
+}
+
+.react-calendar-heatmap-month-label {
+  font-size: 10px;  
+}
+
+.react-calendar-heatmap-weekday-labels text {
+  font-size: 10px; 
+}
+
+.contributors-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.contributor-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+
+.contributor-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.contributor-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.contributor-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+.contributor-commits {
+  font-size: 12px;
+  color: #666;
 }

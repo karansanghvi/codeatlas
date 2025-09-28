@@ -15,11 +15,6 @@
   color: black;
 }
 
-/* .login-screen {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */
 .login-screen {
   display: flex;
   height: 80vh;
@@ -65,7 +60,7 @@
 }
 
 .login-content span {
-    color: #FF0B23;
+  color: #FF0B23;
 }
 
 .login-form {

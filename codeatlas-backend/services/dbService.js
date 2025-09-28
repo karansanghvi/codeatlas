@@ -8,13 +8,14 @@ async function saveRepoData(githubURL, repoInfo, contributors, languages, files)
 
         // insert/update repository
         const repoResult = await client.query(
-            `INSERT INTO repositories (github_url, name, stars, forks, issues, license)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO repositories (github_url, name, stars, forks, issues, license, private)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (github_url) DO UPDATE SET 
                 stars = EXCLUDED.stars,
                 forks = EXCLUDED.forks,
                 issues = EXCLUDED.issues,
-                license = EXCLUDED.license
+                license = EXCLUDED.license,
+                private = EXCLUDED.private
             RETURNING id`,
             [
                 githubURL,
@@ -23,6 +24,7 @@ async function saveRepoData(githubURL, repoInfo, contributors, languages, files)
                 repoInfo.forks_count,
                 repoInfo.open_issues_count,
                 repoInfo.license?.name || "N/A",
+                repoInfo.private || false,
             ]
         );
 

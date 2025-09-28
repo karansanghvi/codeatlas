@@ -133,11 +133,11 @@ function ArchitectureGraph({ githubURL }) {
     <div style={{ display: "flex", gap: "12px" }}>
       <div style={{ flex: 1, position: "relative" }}>
         {/* Zoom Controls */}
-        <div style={{ position: "absolute", top: 10, left: 10, zIndex: 10, display: "flex", gap: "6px", flexDirection: 'column' }}>
-          <button onClick={zoomIn} className="zoom-button"><FaPlus /></button>
-          <button onClick={zoomOut} className="zoom-button"><FaMinus /></button>
-          <button onClick={resetZoom} className="zoom-button"><GrPowerReset /></button>
-          <button onClick={toggleGrab} className="zoom-button">{grabEnabled ? <FaHandPointer /> : "🖐️"}</button>
+        <div className="zoom-buttons">
+          <button onClick={zoomIn} className="plus-button"><FaPlus /></button>
+          <button onClick={zoomOut} className="minus-button"><FaMinus /></button>
+          <button onClick={resetZoom} className="reset-button"><GrPowerReset /></button>
+          <button onClick={toggleGrab} className="reset-button">{grabEnabled ? <FaHandPointer /> : "🖐️"}</button>
         </div>
 
         <CytoscapeComponent

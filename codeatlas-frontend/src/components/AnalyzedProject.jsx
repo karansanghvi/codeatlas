@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import "../assets/styles/analyzedProjects.css";
 import { IoChevronBackOutline } from "react-icons/io5";
 import ArchitectureGraph from "./ArchitectureGraph";
+import ReactCalendarHeatmap from "react-calendar-heatmap";
+import { Tooltip as ReactTooltip } from 'react-tooltip'
 
 function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
   const rootFiles = files.filter(f => f.type === "file");
@@ -40,12 +42,15 @@ function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
 function AnalyzedProject({ githubURL, setActivePage }) {
   const [files, setFiles] = useState([]);
   const [repoInfo, setRepoInfo] = useState(null);
-  const [contributors, setContributors] = useState([]);
+  const [contributors, setContributors] = useState([])
   const [languages, setLanguages] = useState({});
   const [, setLoading] = useState(true);
   const [collapsedFolders, setCollapsedFolders] = useState({});
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
   const [isArchModalOpen, setIsArchModalOpen] = useState(false);
+  const [activity, setActivity] = useState(null);
+  const [selectedCommits, setSelectedCommits] = useState([]);
+  const [isTooltipModalOpen, setIsTooltipModalOpen] = useState(false);
 
   const repoName = githubURL?.split("/").slice(-1)[0] || "Project";
   const safeSetActivePage = setActivePage || (() => {});
@@ -70,12 +75,52 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         setContributors(data.contributors || []);
         setLanguages(data.languages || {});
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching repo data: ", err);
       }
       setLoading(false);
     };
     fetchRepoData();
   }, [githubURL]);
+
+  // useEffect(() => {
+  //   const fetchActivity = async () => {
+  //     if (!githubURL) return;
+  //     try {
+  //       const res = await fetch("http://localhost:5000/api/activity", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ githubURL }),
+  //       });
+  //       const data = await res.json();
+  //       setActivity(data);
+  //     } catch (err) {
+  //       console.error("Error fetching activity: ", err);
+  //     }
+  //   };
+  //   fetchActivity();
+  // }, [githubURL]);
+  useEffect(() => {
+  const fetchActivity = async () => {
+    if (!githubURL) return;
+    try {
+      const res = await fetch("http://localhost:5000/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubURL }),
+      });
+      const data = await res.json();
+      setActivity(data);
+
+      // Debug: log the commitDetails structure
+      console.log("Fetched activity:", data);
+      console.log("Commit details keys:", Object.keys(data.commitDetails || {}));
+    } catch (err) {
+      console.error("Error fetching activity: ", err);
+    }
+  };
+  fetchActivity();
+}, [githubURL]);
+
 
   return (
     <>
@@ -145,14 +190,85 @@ function AnalyzedProject({ githubURL, setActivePage }) {
 
         {/* Code Architecture Card */}
         <div className="file-card">
-          <h3 style={{ marginBottom: '5px' }}>Code Architecture</h3>
-          <p style={{ marginBottom: '10px' }}>Visualize classes, functions, and dependencies</p>
-          <button 
-            className="dashboard-button"
-            onClick={() => setIsArchModalOpen(true)}
-          >
-            View Architecture
-          </button>
+          <div className="code-architecture-grid">
+            <div>
+              <h3 style={{ marginBottom: '5px' }}>Code Architecture</h3>
+              <p style={{ marginBottom: '10px' }}>Visualize classes, functions, and dependencies</p>
+            </div>
+            <div>
+              <button 
+                className="dashboard-button"
+                onClick={() => setIsArchModalOpen(true)}
+              >
+                View Architecture
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <br />
+
+        {/* Activity and Analysis */}
+        <div className="file-card">
+          <h3 style={{ marginBottom: '5px' }}>Activity & Analysis</h3>
+
+          {activity && (
+            <>
+              {/* Commit Heatmap */}
+              <div style={{ marginTop: '20px' }}>
+                <ReactCalendarHeatmap
+                  startDate={new Date(new Date().setMonth(new Date().getMonth() - 12))}
+                  endDate={new Date()}
+                  values={Object.entries(activity.heatmap || {}).map(([date, count]) => ({ date, count }))}
+                  classForValue={(value) => {
+                    if (!value) return "color-empty";
+                    return `color-scale-${Math.min(value.count, 4)}`;
+                  }}
+                  gutterSize={2}
+                  rectSize={12}
+                  showWeekdayLabels={true}
+                  onClick={(value) => {
+                    if (!value) {
+                      setSelectedCommits([]);
+                      setIsTooltipModalOpen(true);
+                      return;
+                    }
+
+                    // Normalize date to YYYY-MM-DD
+                    let dateKey = value.date;
+                    if (dateKey.includes('T')) {
+                      dateKey = dateKey.split('T')[0];
+                    }
+                    // Replace slashes with dashes if commitDetails uses that
+                    dateKey = dateKey.replace(/\//g, '-');
+
+                    const commitsForDate = activity?.commitDetails?.[dateKey] || [];
+                    setSelectedCommits(commitsForDate);
+                    setIsTooltipModalOpen(true);
+
+                    console.log("Clicked date:", value.date);
+                    console.log("Normalized date key:", dateKey);
+                    console.log("Commits:", commitsForDate);
+                  }}
+                />
+                <ReactTooltip multiline={true} place="top" type="dark" effect="solid" />
+              </div>
+
+              {/* Contributor Analysis */}
+              <h4>Contributors</h4>
+              <div className="contributors-container">
+                {activity.contributors.map(c => (
+                  <div key={c.login} className="contributor-card">
+                    <img src={c.avatar_url} alt={c.login} className="contributor-avatar" />
+                    <div className="contributor-info">
+                      <span className="contributor-name">{c.login}</span>
+                      <span className="contributor-commits">{c.commits} commits</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -185,7 +301,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Code Architecture</h2>
-           <p>Visualize your codebase structure with an interactive graph showing files, classes, functions, and their dependencies. Great for understanding relationships, spotting complexity, and planning refactors.</p>
+            <p>Visualize your codebase structure with an interactive graph showing files, classes, functions, and their dependencies. Great for understanding relationships, spotting complexity, and planning refactors.</p>
             <div className="modal-body">
               <ArchitectureGraph githubURL={githubURL} />
             </div>
@@ -194,6 +310,33 @@ function AnalyzedProject({ githubURL, setActivePage }) {
                 onClick={() => setIsArchModalOpen(false)}
                 className="view-button"
               >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal To Display The Commits */}
+      {isTooltipModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Commits for Selected Date</h3>
+            <div className="modal-body">
+              {selectedCommits.length === 0 ? (
+                <p>No commits on this day.</p>
+              ) : (
+                <ul>
+                  {selectedCommits.map((c, index) => (
+                    <li key={index}>
+                      <strong>{c.login}</strong>: {c.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => setIsTooltipModalOpen(false)} className="view-button">
                 Close
               </button>
             </div>

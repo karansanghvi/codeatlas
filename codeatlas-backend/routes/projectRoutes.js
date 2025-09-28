@@ -7,7 +7,7 @@ const { route } = require("./githubRoutes");
 router.get("/repositories", async (req, res) => {
     try {
         const result = await pool.query(
-            "SELECT id, name, github_url, stars, forks FROM repositories ORDER BY id DESC"
+            "SELECT id, name, github_url, stars, forks FROM repositories WHERE private = false ORDER BY id DESC"
         );
         res.json(result.rows);
     } catch (err) {

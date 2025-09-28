@@ -113,9 +113,9 @@
   transition: background 0.3s ease;
 }
 
-.login-btn:hover {
+/* .login-btn:hover {
   background: #FF4B00;
-}
+} */
 
 .input-row {
     display: flex;

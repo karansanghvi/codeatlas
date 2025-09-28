@@ -14,6 +14,11 @@ function Dashboard() {
   const [githubURL, setGithubURL] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [searchError, setSearchError] = useState("");
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -30,7 +35,64 @@ function Dashboard() {
     fetchUserName();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowSearchModal(true);
+      }
+
+      if (e.key === 'Escape') {
+        setShowSearchModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSearchChange = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    setSearchError(""); // reset error
+
+    if (query.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:5000/api/repositories");
+      const projects = await res.json();
+
+      // Filter projects based on search query
+      const filtered = projects.filter(p =>
+        p.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      setSearchResults(filtered);
+    } catch (err) {
+      console.error(err);
+      setSearchError("Failed to fetch projects");
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (searchResults.length > 0) {
+        const project = searchResults[0];
+        window.open(project.github_url, "_blank");
+        setRecentSearches(prev => [project.name, ...prev.filter(name => name !== project.name)]);
+        setSearchQuery("");
+        setSearchResults([]);
+      } else {
+        setSearchError("Project not found");
+      }
+    }
+  };
+
   return (
+    <>
     <div className="dashboard-container">
       {/* Sidebar */}
       <aside className="sidebar">
@@ -55,8 +117,15 @@ function Dashboard() {
       <main className="main-content">
         {/* Top bar */}
         <div className="top-bar">
-          <input type="text" placeholder="Search..." className="search-bar" />
-          {/* <div className="user-profile">{fullName || "User"}</div> */}
+          <input 
+            type="text" 
+            placeholder="Search..." 
+            className="search-bar" 
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            autoFocus
+          />
           <Link to="/login">
             <button className="dashboard-button">Login</button>
           </Link>
@@ -77,6 +146,41 @@ function Dashboard() {
         {activePage === "Settings" && <Settings />}
       </main>
     </div>
+
+    {showSearchModal && (
+      <div className="search-modal-overlay">
+        <div className="search-modal">
+          <div className="search-header">
+            <input
+              type="text"
+              placeholder="Search documentation"
+              className="search-input"
+              autoFocus
+            />
+            <span className="esc-hint">esc</span>
+          </div>
+
+          <div className="recent-section">
+            <h4>Recent</h4>
+            {searchQuery === "" && recentSearches.length === 0 && <p style = {{color: 'black'}}>No Recent Searches</p>}
+
+            <ul className="recent-list">
+              {searchQuery === ""
+                ? recentSearches.map((item, idx) => <li key={idx}>{item}</li>)
+                : searchResults.length > 0
+                  ? searchResults.map(project => (
+                      <li key={project.id} onClick={() => window.open(project.github_url, "_blank")}>
+                        {project.name}
+                      </li>
+                    ))
+                  : searchError && <li>{searchError}</li>
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
