@@ -38,12 +38,6 @@
   cursor: pointer;
 }
 
-/* .project-button:hover {
-  background-color: white;
-  border: 2px solid #FF4B00;
-  color: black;
-} */
-
 .delete-button {
   padding: 9px 28px;
   background-color: white;

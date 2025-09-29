@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/auth";
-import signup from "../assets/images/signup_illustration.png";
+import bcrypt from "bcryptjs";
 
 function Signup() {
   const [fullName, setFullName] = useState("");
@@ -19,10 +19,13 @@ function Signup() {
     try {
       const userCred = await createUserWithEmailAndPassword(auth, email, password);
 
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       await setDoc(doc(db, "users", userCred.user.uid), {
         fullName,
         phone,
         email,
+        password: hashedPassword,
       });
 
       alert("Account created successfully!");
@@ -44,14 +47,10 @@ function Signup() {
       </Link>
     </header>
     <div className="signup-screen">
-      <div className="signup-image">
-        <img src={signup} alt="Signup" />
-      </div>
 
       <div className="signup-content">
         <h1>Signup</h1>
-        <p>Join us to discover amazing stories made just for kids!</p>
-
+  
         <form className="login-form" onSubmit={handleSignup}>
           <div className="input-row">
             <div className="input-box">

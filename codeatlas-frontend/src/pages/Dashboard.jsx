@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import "../assets/styles/dashboard.css";
-import { getAuth } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
 import DashboardHome from "../components/DashboardHome";
 import Projects from "../components/Projects";
 import Analytics from "../components/Analytics";
 import Settings from "../components/Settings";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const [fullName, setFullName] = useState("");
+  const [fullName, setFullName] = useState(() => {
+    return localStorage.getItem("fullName") || "";
+  });
   const [githubURL, setGithubURL] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activePage, setActivePage] = useState("Dashboard");
@@ -19,6 +21,9 @@ function Dashboard() {
   const [searchResults, setSearchResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [searchError, setSearchError] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -34,6 +39,12 @@ function Dashboard() {
     };
     fetchUserName();
   }, []);
+
+  useEffect(() => {
+    if (fullName) {
+      localStorage.setItem("fullName", fullName);
+    }
+  }, [fullName]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -54,7 +65,7 @@ function Dashboard() {
   const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    setSearchError(""); // reset error
+    setSearchError(""); 
 
     if (query.trim() === "") {
       setSearchResults([]);
@@ -65,7 +76,6 @@ function Dashboard() {
       const res = await fetch("http://localhost:5000/api/repositories");
       const projects = await res.json();
 
-      // Filter projects based on search query
       const filtered = projects.filter(p =>
         p.name.toLowerCase().includes(query.toLowerCase())
       );
@@ -90,6 +100,18 @@ function Dashboard() {
       }
     }
   };
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      localStorage.removeItem("fullName");
+      setFullName("");
+      navigate("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }
 
   return (
     <>
@@ -126,14 +148,35 @@ function Dashboard() {
             onKeyDown={handleSearchKeyDown}
             autoFocus
           />
-          <Link to="/login">
-            <button className="dashboard-button">Login</button>
-          </Link>
+          {fullName ? (
+            <div className="dropdown">
+              <button
+                className="dashboard-button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                {fullName} ▾
+              </button>
+
+              {dropdownOpen && (
+                <div className="dropdown-menu">
+                  <Link to="/profile" style={{ textDecoration: 'none' }}>
+                    <button className="dropdown-item">View Profile</button>
+                  </Link>
+                  <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/login">
+              <button className="dashboard-button">Login</button>
+            </Link>
+          )}
         </div>
 
         {activePage === "Dashboard" && (
           <DashboardHome
             fullName={fullName}
+            setFullName={setFullName}
             githubURL={githubURL}
             setGithubURL={setGithubURL}
             isAnalyzing={isAnalyzing}

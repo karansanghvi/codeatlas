@@ -1,22 +1,16 @@
-.app-header {
-  width: 100%;
-  height: 60px;
-  background-color: #f9fafb; 
-}
-
-.app-header h1 {
-  color: black;
-  padding: 12px;
-  font-size: 24px;
-}
-
-.login-screen {
+.profile-screen {
   display: flex;
   width: 100%;
-  margin-top: 20px;
 }
 
-.login-content {
+.signup-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-content {
   flex: 1;
   padding: 60px;
   width: 400px;
@@ -26,20 +20,20 @@
   background-color: white; 
 }
 
-.login-content h1 {
+.profile-content h1 {
   color: #FF4B00;
   font-size: 2.5rem;
   font-weight: 700;
 }
 
-.login-content p {
+.profile-content p {
   margin-top: 5px;
   color: black;
   font-size: 1rem;
 }
 
-.login-content span {
-  color: #FF0B23;
+.profile-content span {
+  color: #FF4B00;
 }
 
 .login-form {
@@ -73,7 +67,7 @@
 
 .input-box input:focus {
   outline: none;
-  border: 1px solid #FF0B23;
+  border: 1px solid #FF4B00;
 }
 
 .input-box input::placeholder {
@@ -81,7 +75,7 @@
 }
 
 .login-btn {
-  background: #FF0B23;
+  background: #FF4B00;
   color: #fff;
   border: none;
   padding: 12px;
@@ -103,16 +97,16 @@
 
 /* Tablet view */
 @media (max-width: 768px) {
-  .login-content {
+  .profile-content {
     width: 90%;
     padding: 30px 20px;
   }
 
-  .login-content h1 {
+  .profile-content h1 {
     font-size: 2rem;
   }
 
-  .login-content p {
+  .profile-content p {
     font-size: 0.95rem;
   }
 
@@ -129,7 +123,7 @@
 
 /* Mobile view */
 @media (max-width: 480px) {
-  .login-content {
+  .profile-content {
     width: 100%;
     padding: 25px 15px;
     border-radius: 10px;
@@ -138,11 +132,11 @@
     margin-top: 120px;
   }
 
-  .login-content h1 {
+  .profile-content h1 {
     font-size: 1.8rem;
   }
 
-  .login-content p {
+  .profile-content p {
     font-size: 0.9rem;
   }
 
