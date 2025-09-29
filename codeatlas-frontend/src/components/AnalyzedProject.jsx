@@ -82,45 +82,26 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     fetchRepoData();
   }, [githubURL]);
 
-  // useEffect(() => {
-  //   const fetchActivity = async () => {
-  //     if (!githubURL) return;
-  //     try {
-  //       const res = await fetch("http://localhost:5000/api/activity", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ githubURL }),
-  //       });
-  //       const data = await res.json();
-  //       setActivity(data);
-  //     } catch (err) {
-  //       console.error("Error fetching activity: ", err);
-  //     }
-  //   };
-  //   fetchActivity();
-  // }, [githubURL]);
   useEffect(() => {
-  const fetchActivity = async () => {
-    if (!githubURL) return;
-    try {
-      const res = await fetch("http://localhost:5000/api/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ githubURL }),
-      });
-      const data = await res.json();
-      setActivity(data);
+    const fetchActivity = async () => {
+      if (!githubURL) return;
+      try {
+        const res = await fetch("http://localhost:5000/api/activity", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ githubURL }),
+        });
+        const data = await res.json();
+        setActivity(data);
 
-      // Debug: log the commitDetails structure
-      console.log("Fetched activity:", data);
-      console.log("Commit details keys:", Object.keys(data.commitDetails || {}));
-    } catch (err) {
-      console.error("Error fetching activity: ", err);
-    }
-  };
-  fetchActivity();
-}, [githubURL]);
-
+        console.log("Fetched activity:", data);
+        console.log("Commit details keys:", Object.keys(data.commitDetails || {}));
+      } catch (err) {
+        console.error("Error fetching activity: ", err);
+      }
+    };
+    fetchActivity();
+  }, [githubURL]);
 
   return (
     <>
@@ -138,7 +119,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
             </div>
 
             <a href={githubURL} target="_blank" rel="noopener noreferrer">
-              <button className="view-button">Go To GitHub</button>
+              <button className="dashboard-button">View On GitHub</button>
             </a>
           </div>
         )}
@@ -176,12 +157,12 @@ function AnalyzedProject({ githubURL, setActivePage }) {
           {/* File Structure Card */}
           <div className="file-card">
             <h3 style={{ marginBottom: '5px' }}>File Structure</h3>
-            <p style={{ marginBottom: '5px' }}>Click the below button to view the file structure</p>
+            <p style={{ marginBottom: '5px' }}>Explore the repository’s file structure by clicking the button below.</p>
             <button 
-              className="dashboard-button"
+              className="view-button"
               onClick={() => setIsFileModalOpen(true)}
             >
-              View
+              View Files
             </button>
           </div>
         </div>
@@ -193,7 +174,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
           <div className="code-architecture-grid">
             <div>
               <h3 style={{ marginBottom: '5px' }}>Code Architecture</h3>
-              <p style={{ marginBottom: '10px' }}>Visualize classes, functions, and dependencies</p>
+              <p style={{ marginBottom: '10px' }}>Graphical view of the codebase showing classes, functions, and their interconnections.</p>
             </div>
             <div>
               <button 
@@ -211,6 +192,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         {/* Activity and Analysis */}
         <div className="file-card">
           <h3 style={{ marginBottom: '5px' }}>Activity & Analysis</h3>
+          <p>Visualizes repository activity over the past year with a commit heatmap and shows each contributor's total commits and details.</p>
 
           {activity && (
             <>
@@ -270,6 +252,86 @@ function AnalyzedProject({ githubURL, setActivePage }) {
             </>
           )}
         </div>
+
+        <br />
+
+        {/* Productivity And Contributions Card */}
+        <div className="file-card">
+          {activity?.contributors?.length > 0 && (() => {
+            // Compute max values for scaling
+            const maxCommits = Math.max(...activity.contributors.map(c => c.commits));
+            const maxAdded = Math.max(...activity.contributors.map(c => c.linesAdded));
+            const maxRemoved = Math.max(...activity.contributors.map(c => c.linesRemoved));
+            const maxFiles = Math.max(...activity.contributors.map(c => c.filesChanged));
+
+            // Find the top contributor by commits
+            const topContributor = activity.contributors.reduce((top, c) => c.commits > top.commits ? c : top, activity.contributors[0]);
+
+            return (
+              <>
+              <h3 style={{ marginBottom: '5px' }}>Productivity and Contributions</h3>
+              <p style={{ marginBottom: '10px' }}>Displays each contributor's activity - commits, lines added/removed and files changed - while highlighting the top contributor and overall team contributions.</p>
+              <h4>Top Contributor</h4>
+              <div className="contributor-card">
+                <img src={topContributor.avatar_url} alt={topContributor.login} className="contributor-avatar" />
+                  <div className="contributor-info">
+                    <span className="contributor-name">{topContributor.login}</span>
+                    <span className="contributor-commits">{topContributor.commits} commits</span>
+                  </div>
+              </div>
+
+              <br />
+
+              <h4>Team Contribution Status</h4>
+              <div className="contributors-metrics">
+                {activity.contributors
+                  .sort((a, b) => b.commits - a.commits)
+                  .map(c => (
+                  <div key={c.login} className="contributor-card">
+                    <img src={c.avatar_url} alt={c.login} className="contributor-avatar" />
+                    <div className="contributor-info">
+                      <span className="contributor-name">{c.login}</span>
+
+                      <div className="metric">
+                        <span role="img" aria-label="commits"></span> Commits: {c.commits}
+                        <div
+                          className="metric-bar"
+                          style={{ width: `${(c.commits / maxCommits) * 100}%`, backgroundColor: "#4caf50" }}
+                        />
+                      </div>
+
+                      <div className="metric">
+                        <span role="img" aria-label="lines-added"></span> Lines Added: {c.linesAdded}
+                        <div
+                          className="metric-bar"
+                          style={{ width: `${(c.linesAdded / maxAdded) * 100}%`, backgroundColor: "#4caf50" }}
+                        />
+                      </div>
+
+                      <div className="metric">
+                        <span role="img" aria-label="lines-removed"></span> Lines Removed: {c.linesRemoved}
+                        <div
+                          className="metric-bar"
+                          style={{ width: `${(c.linesRemoved / maxRemoved) * 100}%`, backgroundColor: "#f44336" }}
+                        />
+                      </div>
+
+                      <div className="metric">
+                        <span role="img" aria-label="files-changed"></span> Files Changed: {c.filesChanged}
+                        <div
+                          className="metric-bar"
+                          style={{ width: `${(c.filesChanged / maxFiles) * 100}%`, backgroundColor: "#2196f3" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </>
+            );
+          })()}
+        </div>
+
       </div>
 
       {/* Modal To See File Structure */}
@@ -320,23 +382,27 @@ function AnalyzedProject({ githubURL, setActivePage }) {
       {/* Modal To Display The Commits */}
       {isTooltipModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content commits-modal">
             <h3>Commits for Selected Date</h3>
-            <div className="modal-body">
+            <div className="modal-body commits-body">
               {selectedCommits.length === 0 ? (
                 <p>No commits on this day.</p>
               ) : (
-                <ul>
+                <div className="commit-list">
                   {selectedCommits.map((c, index) => (
-                    <li key={index}>
-                      <strong>{c.login}</strong>: {c.message}
-                    </li>
+                    <div key={index} className="commit-card">
+                      <div className="commit-user">{c.login}</div>
+                      <div className="commit-message">{c.message}</div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
             <div className="modal-footer">
-              <button onClick={() => setIsTooltipModalOpen(false)} className="view-button">
+              <button 
+                onClick={() => setIsTooltipModalOpen(false)} 
+                className="view-button"
+              >
                 Close
               </button>
             </div>

@@ -32,7 +32,10 @@ function Projects() {
   if (selectedRepoURL) {
     return (
       <div>
-        <AnalyzedProject githubURL={selectedRepoURL} />
+        <AnalyzedProject 
+          githubURL={selectedRepoURL} 
+          setActivePage={() => setSelectedRepoURL(null)} 
+        />
       </div>
     );
   }

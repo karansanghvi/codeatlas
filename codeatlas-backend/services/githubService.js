@@ -99,60 +99,96 @@ async function fetchRepoData(githubURL) {
   return { repoInfo, contributors, languages, files };
 }
 
-// get repo activity: commits (for heatmap + contributor stats)
+// Get repository activity with enhanced contributor metrics
 async function fetchRepoActivity(githubURL) {
   const parsed = parseGitHubURL(githubURL);
-  if (!parsed) throw new Error("Invalid Github URL");
+  if (!parsed) throw new Error("Invalid GitHub URL");
   const { owner, repo } = parsed;
 
-  // fetch contributors 
-  let contributors = [];
+  // fetch contributors
+  let contributorsList = [];
   try {
     const { data } = await octokit.rest.repos.listContributors({
       owner,
       repo,
       per_page: 30
     });
-
-    contributors = data.map(c => ({
+    contributorsList = data.map(c => ({
       login: c.login,
       avatar_url: c.avatar_url,
-      commits: c.contributions
+      contributions: c.contributions
     }));
   } catch (err) {
-    console.warn("Failed to fetch contributors:", err.message);
+    console.warn("⚠️ Failed to fetch contributors:", err.message);
   }
 
-  // fetch commits for heatmap + commitDetails
+  // fetch commits
   let heatmap = {};
   let commitDetails = {};
+  let contributorStats = {}; // { login: { commits, linesAdded, linesRemoved, filesChanged: Set() } }
+
   try {
-    const { data: commits } = await octokit.rest.repos.listCommits({
-      owner,
-      repo,
-      per_page: 100,   
-    });
+    let page = 1;
+    let commits = [];
+    let fetchMore = true;
 
-    commits.forEach(commit => {
+    while (fetchMore) {
+      const { data: commitsPage } = await octokit.rest.repos.listCommits({
+        owner,
+        repo,
+        per_page: 100,
+        page
+      });
+      if (commitsPage.length === 0) break;
+      commits = commits.concat(commitsPage);
+      page++;
+      if (commitsPage.length < 100) fetchMore = false;
+    }
+
+    for (const commit of commits) {
+      const login = commit.author?.login || commit.commit.author.name;
+
+      if (!contributorStats[login]) {
+        contributorStats[login] = { commits: 0, linesAdded: 0, linesRemoved: 0, filesChanged: new Set() };
+      }
+
+      contributorStats[login].commits += 1;
+
+      // Fetch commit details for lines added/removed and files
+      const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, ref: commit.sha });
+
+      contributorStats[login].linesAdded += commitData.stats.additions;
+      contributorStats[login].linesRemoved += commitData.stats.deletions;
+      commitData.files.forEach(f => contributorStats[login].filesChanged.add(f.filename));
+
+      // Heatmap
       const dateKey = new Date(commit.commit.author.date).toISOString().split("T")[0];
-
-      // heatmap counts
       heatmap[dateKey] = (heatmap[dateKey] || 0) + 1;
 
-      // commit details
+      // Commit details
       if (!commitDetails[dateKey]) commitDetails[dateKey] = [];
       commitDetails[dateKey].push({
-        login: commit.author?.login || commit.commit.author.name,
+        login,
         message: commit.commit.message,
         sha: commit.sha
       });
-    });
+    }
+
   } catch (err) {
-    console.warn("Failed to fetch commits:", err);
+    console.warn("⚠️ Failed to fetch commits:", err.message);
   }
 
-  return { contributors, heatmap, commitDetails };
-}
+  // Transform contributorStats into array
+  const contributorsDetailed = Object.entries(contributorStats).map(([login, stats]) => ({
+    login,
+    avatar_url: contributorsList.find(c => c.login === login)?.avatar_url || null,
+    commits: stats.commits,
+    linesAdded: stats.linesAdded,
+    linesRemoved: stats.linesRemoved,
+    filesChanged: stats.filesChanged.size
+  }));
 
+  return { contributors: contributorsDetailed, heatmap, commitDetails };
+}
 
 module.exports = { fetchRepoData, fetchRepoActivity };

@@ -50,10 +50,6 @@
   border: 1px solid #E4E4E4; 
 }
 
-/* .repo-card:hover, .languages-card:hover, .contributors-card:hover, .file-card, .file-tree-container:hover {
-  transform: translateY(-3px);
-} */
-
 .repo-card h3, .languages-card h3, .contributors-card h3 {
   margin-bottom: 10px;
   font-size: 18px;
@@ -62,7 +58,7 @@
 }
 
 .view-button {
-  padding: 12px 70px;
+  padding: 10px 70px;
   border-radius: 12px;
   background-color: #FF4B00;
   color: white;
@@ -70,7 +66,8 @@
   border: none;
   cursor: pointer;
   transition: background 0.2s;
-  font-size: 15px;
+  font-size: 18px;
+  margin-left: 20px;
 }
 
 /* .view-button:hover {
@@ -260,9 +257,11 @@
   gap: 12px;
   padding: 12px;
   background: #f9f9f9;
+  border-left: 4px solid #ff6600;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   transition: transform 0.2s ease;
+  margin-top: 10px;
 }
 
 .contributor-avatar {
@@ -279,10 +278,96 @@
 .contributor-name {
   font-weight: bold;
   font-size: 14px;
-  color: #333;
+  color: black;
 }
 
 .contributor-commits {
   font-size: 12px;
   color: #666;
+}
+
+/* Modal To See The Commits */
+.commits-modal {
+  max-width: 500px;
+  width: 90%;
+  padding: 20px;
+}
+
+.commits-body {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+.commit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.commit-card {
+  background-color: #f9f9f9;
+  border-left: 4px solid #ff6600;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+}
+
+.commit-user {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.commit-message {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* Productivity Metrices Card */
+.contributors-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 5px;
+}
+
+.contributor-card {
+  display: flex;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.contributor-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.contributor-info {
+  flex: 1;
+}
+
+.contributor-name {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.metric {
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.metric-bar {
+  height: 5px;
+  border-radius: 5px;
+  margin-top: 2px;
 }
