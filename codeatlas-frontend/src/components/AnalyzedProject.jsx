@@ -51,6 +51,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
   const [activity, setActivity] = useState(null);
   const [selectedCommits, setSelectedCommits] = useState([]);
   const [isTooltipModalOpen, setIsTooltipModalOpen] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const repoName = githubURL?.split("/").slice(-1)[0] || "Project";
   const safeSetActivePage = setActivePage || (() => {});
@@ -102,6 +103,35 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     };
     fetchActivity();
   }, [githubURL]);
+
+  useEffect(() => {
+    const container = document.querySelector(".analyzed-project-card"); // or whatever wrapper scrolls
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (container.scrollTop > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    const container = document.querySelector(".analyzed-project-card");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    console.log("showScrollButton:", showScrollButton);
+  }, [showScrollButton]);
 
   return (
     <>
@@ -332,6 +362,11 @@ function AnalyzedProject({ githubURL, setActivePage }) {
           })()}
         </div>
 
+        {showScrollButton && (
+          <button className="scroll-to-top" onClick={scrollToTop}>
+            ⬆
+          </button>
+        )}
       </div>
 
       {/* Modal To See File Structure */}
