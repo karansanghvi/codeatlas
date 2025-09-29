@@ -380,6 +380,69 @@
   margin-top: 2px;
 }
 
+/* Code Churn */
+.file-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.churn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.churn-item {
+  padding: 10px;
+  border-radius: 8px;
+  background: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.churn-file-info {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.churn-filename {
+  color: #333;
+  font-weight: 600;
+}
+
+.churn-bar-container {
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.churn-bar {
+  height: 100%;
+  background-color: #ff9800;
+  border-radius: 4px 0 0 4px;
+}
+
+.churn-contributors {
+  display: flex;
+  gap: 5px;
+}
+
+.contributor-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+}
+
 /* Scroll To Top Page */
 .scroll-to-top {
   position: fixed;

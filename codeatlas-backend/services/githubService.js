@@ -67,7 +67,6 @@ async function fetchRepoData(githubURL) {
     // Repo info
     const res = await octokit.rest.repos.get({ owner, repo });
     repoInfo = res.data;
-    console.log(`🔒 Repo privacy: ${repoInfo.private ? "Private" : "Public"}`);
 
     // Contributors
     try {
@@ -92,27 +91,22 @@ async function fetchRepoData(githubURL) {
       console.warn("⚠️ Repo not found or private without access");
       repoInfo = { private: true, notAccessible: true, name: repo, owner: { login: owner } };
     } else {
-      throw err; // Other errors bubble up
+      throw err;
     }
   }
 
   return { repoInfo, contributors, languages, files };
 }
 
-// Get repository activity with enhanced contributor metrics
+// Get repository activity with enhanced contributor metrics and code churn
 async function fetchRepoActivity(githubURL) {
   const parsed = parseGitHubURL(githubURL);
   if (!parsed) throw new Error("Invalid GitHub URL");
   const { owner, repo } = parsed;
 
-  // fetch contributors
   let contributorsList = [];
   try {
-    const { data } = await octokit.rest.repos.listContributors({
-      owner,
-      repo,
-      per_page: 30
-    });
+    const { data } = await octokit.rest.repos.listContributors({ owner, repo, per_page: 30 });
     contributorsList = data.map(c => ({
       login: c.login,
       avatar_url: c.avatar_url,
@@ -122,10 +116,11 @@ async function fetchRepoActivity(githubURL) {
     console.warn("⚠️ Failed to fetch contributors:", err.message);
   }
 
-  // fetch commits
+  // Commit-level stats
   let heatmap = {};
   let commitDetails = {};
-  let contributorStats = {}; // { login: { commits, linesAdded, linesRemoved, filesChanged: Set() } }
+  let contributorStats = {}; // { login: { commits, linesAdded, linesRemoved, filesChangedCount: {} } }
+  let fileChurn = {}; // { filename: { totalChanges, contributors: Set() } }
 
   try {
     let page = 1;
@@ -149,17 +144,26 @@ async function fetchRepoActivity(githubURL) {
       const login = commit.author?.login || commit.commit.author.name;
 
       if (!contributorStats[login]) {
-        contributorStats[login] = { commits: 0, linesAdded: 0, linesRemoved: 0, filesChanged: new Set() };
+        contributorStats[login] = { commits: 0, linesAdded: 0, linesRemoved: 0, filesChangedCount: {} };
       }
 
       contributorStats[login].commits += 1;
 
-      // Fetch commit details for lines added/removed and files
+      // Fetch commit details
       const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, ref: commit.sha });
 
       contributorStats[login].linesAdded += commitData.stats.additions;
       contributorStats[login].linesRemoved += commitData.stats.deletions;
-      commitData.files.forEach(f => contributorStats[login].filesChanged.add(f.filename));
+
+      // Track file changes per contributor
+      commitData.files.forEach(f => {
+        contributorStats[login].filesChangedCount[f.filename] = (contributorStats[login].filesChangedCount[f.filename] || 0) + 1;
+
+        // Aggregate file churn
+        if (!fileChurn[f.filename]) fileChurn[f.filename] = { totalChanges: 0, contributors: new Set() };
+        fileChurn[f.filename].totalChanges += 1;
+        fileChurn[f.filename].contributors.add(login);
+      });
 
       // Heatmap
       const dateKey = new Date(commit.commit.author.date).toISOString().split("T")[0];
@@ -185,10 +189,20 @@ async function fetchRepoActivity(githubURL) {
     commits: stats.commits,
     linesAdded: stats.linesAdded,
     linesRemoved: stats.linesRemoved,
-    filesChanged: stats.filesChanged.size
+    filesChanged: Object.keys(stats.filesChangedCount).length
   }));
 
-  return { contributors: contributorsDetailed, heatmap, commitDetails };
+  // Transform fileChurn for frontend
+  const sortedFiles = Object.entries(fileChurn)
+    .sort((a, b) => b[1].totalChanges - a[1].totalChanges)
+    .slice(0, 10)
+    .map(([filename, data]) => ({
+      filename,
+      totalChanges: data.totalChanges,
+      contributors: Array.from(data.contributors)
+    }));
+
+  return { contributors: contributorsDetailed, heatmap, commitDetails, fileChurn: sortedFiles };
 }
 
 module.exports = { fetchRepoData, fetchRepoActivity };

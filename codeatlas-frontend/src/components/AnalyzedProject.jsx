@@ -357,10 +357,53 @@ function AnalyzedProject({ githubURL, setActivePage }) {
                   </div>
                 ))}
               </div>
+
+              <br />
+              <h4>Code Churn</h4>
+              <p style={{ marginBottom: '5px' }}>Files with the most changes and contributors touching them.</p>
+              <div className="churn-list">
+                {activity?.fileChurn?.map((file, idx) => {
+                  const maxChanges = Math.max(...activity.fileChurn.map(f => f.totalChanges));
+                  return (
+                    <div key={idx} className="churn-item">
+                      <div className="churn-file-info">
+                        <span className="churn-filename">{file.filename}</span>
+                        <span className="churn-total">Total Changes: {file.totalChanges}</span>
+                      </div>
+                      
+                      <div className="churn-bar-container">
+                        <div
+                          className="churn-bar"
+                          style={{ width: `${(file.totalChanges / maxChanges) * 100}%` }}
+                        />
+                      </div>
+
+                      <div className="churn-contributors">
+                        {file.contributors.map((c, i) => (
+                          <img
+                            key={i}
+                            src={`https://github.com/${c}.png`} // show GitHub avatar
+                            alt={c}
+                            title={c}
+                            className="contributor-avatar"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               </>
             );
           })()}
         </div>
+
+        <br />
+
+        <div className="file-card">
+          
+        </div>
+
 
         {showScrollButton && (
           <button className="scroll-to-top" onClick={scrollToTop}>
