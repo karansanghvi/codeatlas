@@ -3,7 +3,8 @@ import "../assets/styles/analyzedProjects.css";
 import { IoChevronBackOutline } from "react-icons/io5";
 import ArchitectureGraph from "./ArchitectureGraph";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
-import { Tooltip as ReactTooltip } from 'react-tooltip'
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
   const rootFiles = files.filter(f => f.type === "file");
@@ -37,7 +38,31 @@ function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
       ))}
     </ul>
   );
-}
+};
+
+const ChurnTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const contributors = payload[0].payload.contributors;
+    return (
+      <div style={{ background: "#fff", padding: "10px", border: "1px solid #ccc", borderRadius: "5px" }}>
+        <strong>{label}</strong>
+        <div>Total Changes: {payload[0].value}</div>
+        <div style={{ display: "flex", gap: "5px", marginTop: "5px" }}>
+          {contributors.map((c, i) => (
+            <img
+              key={i}
+              src={`https://github.com/${c}.png`}
+              alt={c}
+              title={c}
+              style={{ width: "25px", height: "25px", borderRadius: "50%" }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 function AnalyzedProject({ githubURL, setActivePage }) {
   const [files, setFiles] = useState([]);
@@ -84,6 +109,8 @@ function AnalyzedProject({ githubURL, setActivePage }) {
   }, [githubURL]);
 
   useEffect(() => {
+    let lastCommitSha = null; 
+
     const fetchActivity = async () => {
       if (!githubURL) return;
       try {
@@ -93,19 +120,29 @@ function AnalyzedProject({ githubURL, setActivePage }) {
           body: JSON.stringify({ githubURL }),
         });
         const data = await res.json();
-        setActivity(data);
 
-        console.log("Fetched activity:", data);
-        console.log("Commit details keys:", Object.keys(data.commitDetails || {}));
+        if (data?.commitDetails) {
+          const allCommits = Object.values(data.commitDetails).flat();
+          const latestCommit = allCommits[0]; 
+
+          if (latestCommit && latestCommit.sha !== lastCommitSha) {
+            console.log("🚀 New commit detected:", latestCommit);
+            lastCommitSha = latestCommit.sha;
+            setActivity(data); 
+          }
+        }
       } catch (err) {
-        console.error("Error fetching activity: ", err);
+        console.error("Error fetching activity:", err);
       }
     };
-    fetchActivity();
+
+    fetchActivity(); 
+    const interval = setInterval(fetchActivity, 30000); 
+    return () => clearInterval(interval);
   }, [githubURL]);
 
   useEffect(() => {
-    const container = document.querySelector(".analyzed-project-card"); // or whatever wrapper scrolls
+    const container = document.querySelector(".analyzed-project-card"); 
     if (!container) return;
 
     const handleScroll = () => {
@@ -268,17 +305,19 @@ function AnalyzedProject({ githubURL, setActivePage }) {
 
               {/* Contributor Analysis */}
               <h4>Contributors</h4>
-              <div className="contributors-container">
-                {activity.contributors.map(c => (
-                  <div key={c.login} className="contributor-card">
-                    <img src={c.avatar_url} alt={c.login} className="contributor-avatar" />
-                    <div className="contributor-info">
-                      <span className="contributor-name">{c.login}</span>
-                      <span className="contributor-commits">{c.commits} commits</span>
+              {activity?.contributors?.length > 0 && (
+                <div className="contributors-container">
+                  {activity.contributors.map(c => (
+                    <div key={c.login} className="contributor-card">
+                      <img src={c.avatar_url} alt={c.login} className="contributor-avatar" />
+                      <div className="contributor-info">
+                        <span className="contributor-name">{c.login}</span>
+                        <span className="contributor-commits">{c.commits} commits</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -362,36 +401,25 @@ function AnalyzedProject({ githubURL, setActivePage }) {
               <h4>Code Churn</h4>
               <p style={{ marginBottom: '5px' }}>Files with the most changes and contributors touching them.</p>
               <div className="churn-list">
-                {activity?.fileChurn?.map((file, idx) => {
-                  const maxChanges = Math.max(...activity.fileChurn.map(f => f.totalChanges));
-                  return (
-                    <div key={idx} className="churn-item">
-                      <div className="churn-file-info">
-                        <span className="churn-filename">{file.filename}</span>
-                        <span className="churn-total">Total Changes: {file.totalChanges}</span>
-                      </div>
-                      
-                      <div className="churn-bar-container">
-                        <div
-                          className="churn-bar"
-                          style={{ width: `${(file.totalChanges / maxChanges) * 100}%` }}
-                        />
-                      </div>
-
-                      <div className="churn-contributors">
-                        {file.contributors.map((c, i) => (
-                          <img
-                            key={i}
-                            src={`https://github.com/${c}.png`} // show GitHub avatar
-                            alt={c}
-                            title={c}
-                            className="contributor-avatar"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+                {activity?.fileChurn?.length > 0 && (
+                  <div style={{ width: "100%", height: 400 }}>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart
+                        data={activity.fileChurn.map(f => ({
+                          filename: f.filename.split('/').pop(),
+                          totalChanges: f.totalChanges,
+                          contributors: f.contributors,
+                        }))}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                      >
+                        <XAxis dataKey="filename" angle={-45} textAnchor="end" interval={0} />
+                        <YAxis />
+                        <Tooltip content={<ChurnTooltip />} />
+                        <Bar dataKey="totalChanges" fill="#FF4B00" barSize={30} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
               </>
             );
