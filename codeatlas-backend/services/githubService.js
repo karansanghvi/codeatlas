@@ -1,6 +1,10 @@
-require("dotenv").config();
-const { Octokit } = require("@octokit/rest");
-const parseGitHubURL = require("../utils/parseGitHubURL");
+import dotenv from "dotenv";
+dotenv.config();
+
+import { Octokit } from "@octokit/rest";
+import parseGitHubURL from "../utils/parseGitHubURL.js";
+
+console.log("GitHub token:", process.env.GITHUB_TOKEN?.slice(0,4) + "...");
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN || "your-fallback-token-here"
@@ -205,4 +209,64 @@ async function fetchRepoActivity(githubURL) {
   return { contributors: contributorsDetailed, heatmap, commitDetails, fileChurn: sortedFiles };
 }
 
-module.exports = { fetchRepoData, fetchRepoActivity };
+async function fetchPRReviewStats(githubURL) {
+  const parsed = parseGitHubURL(githubURL);
+  if (!parsed) throw new Error("Invalid GitHub URL");
+  const { owner, repo } = parsed;
+
+  const reviewStats = {};
+
+  let page = 1;
+  let fetchMore = true;
+  const pullRequests = [];
+
+  // Fetch all PRs (closed + open)
+  while (fetchMore) {
+    const { data: prs } = await octokit.rest.pulls.list({
+      owner,
+      repo,
+      state: "all",
+      per_page: 50,
+      page
+    });
+    if (prs.length === 0) break;
+    pullRequests.push(...prs);
+    page++;
+    if (prs.length < 50) fetchMore = false;
+  }
+
+  for (const pr of pullRequests) {
+    const { data: reviews } = await octokit.rest.pulls.listReviews({
+      owner,
+      repo,
+      pull_number: pr.number
+    });
+
+    for (const review of reviews) {
+      const reviewer = review.user.login;
+      if (!reviewStats[reviewer]) {
+        reviewStats[reviewer] = { prsReviewed: 0, totalReviewTime: 0 };
+      }
+
+      reviewStats[reviewer].prsReviewed += 1;
+
+      // Calculate review time in hours
+      const createdAt = new Date(pr.created_at);
+      const submittedAt = new Date(review.submitted_at);
+      const hours = (submittedAt - createdAt) / (1000 * 60 * 60); 
+      reviewStats[reviewer].totalReviewTime += hours;
+    }
+  }
+
+  // Compute average review time
+  const result = Object.entries(reviewStats).map(([login, stats]) => ({
+    login,
+    prsReviewed: stats.prsReviewed,
+    avgReviewTimeHours: stats.totalReviewTime / stats.prsReviewed
+  }));
+
+  return result;
+}
+
+// module.exports = { fetchRepoData, fetchRepoActivity, fetchPRReviewStats };
+export { fetchRepoData, fetchRepoActivity, fetchPRReviewStats };

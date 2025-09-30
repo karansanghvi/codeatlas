@@ -1,4 +1,4 @@
-const pool = require("../db/index");
+import pool from "../db/index.js";
 
 async function saveRepoData(githubURL, repoInfo, contributors, languages, files)  {
     const client = await pool.connect();
@@ -121,4 +121,5 @@ async function getRepoIdByURL(githubURL) {
     }
 }
 
-module.exports = { saveRepoData, saveArchitecture, getArchitecture, getRepoIdByURL };
+// module.exports = { saveRepoData, saveArchitecture, getArchitecture, getRepoIdByURL };
+export { saveRepoData, saveArchitecture, getArchitecture, getRepoIdByURL };

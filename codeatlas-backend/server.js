@@ -1,9 +1,8 @@
-const express = require("express");
-const cors = require("cors");
-
-const githubRoutes = require("./routes/githubRoutes");
-const projectsRoutes = require("./routes/projectRoutes");
-const architectureRoutes = require("./routes/architectureRoutes");
+import express from "express";
+import cors from "cors";
+import githubRoutes from "./routes/githubRoutes.js";
+import projectsRoutes from "./routes/projectRoutes.js";
+import architectureRoutes from "./routes/architectureRoutes.js";
 
 const app = express();
 app.use(cors());

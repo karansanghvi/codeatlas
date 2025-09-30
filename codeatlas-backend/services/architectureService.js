@@ -1,10 +1,19 @@
-const axios = require("axios");
-const parser = require("@babel/parser");
-const traverse = require("@babel/traverse").default;
-const t = require("@babel/types");
-const parseGitHubURL = require("../utils/parseGitHubURL");
-const { fetchRepoData } = require("./githubService");
-const { saveArchitecture, getArchitecture, getRepoIdByURL } = require("./dbService");
+// const axios = require("axios");
+// const parser = require("@babel/parser");
+// const traverse = require("@babel/traverse").default;
+// const t = require("@babel/types");
+// const parseGitHubURL = require("../utils/parseGitHubURL");
+// const { fetchRepoData } = require("./githubService");
+// const { saveArchitecture, getRepoIdByURL } = require("./dbService");
+import axios from "axios";
+import * as parser from "@babel/parser";
+import traverse from "@babel/traverse";
+import * as t from "@babel/types";
+
+import parseGitHubURL from "../utils/parseGitHubURL.js";
+import { fetchRepoData } from "./githubService.js";
+import { saveArchitecture, getRepoIdByURL } from "./dbService.js";
+
 
 // helpers
 function flattenFiles(filesTree) {
@@ -221,4 +230,4 @@ async function buildArchitecture(githubURL, options = { maxDepth: 3 }) {
   return graph;
 }
 
-module.exports = { buildArchitecture };
+export { buildArchitecture };

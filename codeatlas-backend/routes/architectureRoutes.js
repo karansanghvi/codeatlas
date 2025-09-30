@@ -1,7 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { buildArchitecture } = require("../services/architectureService");
-const { getArchitecture, getRepoIdByURL } = require("../services/dbService");
+
+import { buildArchitecture } from "../services/architectureService.js";
+import { getArchitecture, getRepoIdByURL } from "../services/dbService.js";
+
 
 router.post("/architecture", async (req, res) => {
   const { githubURL } = req.body;
@@ -40,4 +42,4 @@ router.get("/architecture", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const pool = require("../db/index");
-const { route } = require("./githubRoutes");
+
+import pool from "../db/index.js";
 
 // get all repos
 router.get("/repositories", async (req, res) => {
@@ -31,4 +31,4 @@ router.delete("/repositories/:id", async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

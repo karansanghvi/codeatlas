@@ -4,7 +4,8 @@ import { IoChevronBackOutline } from "react-icons/io5";
 import ArchitectureGraph from "./ArchitectureGraph";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
 import { Tooltip as ReactTooltip } from 'react-tooltip';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer} from "recharts";
+import ForceGraph2D from 'react-force-graph-2d';
 
 function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
   const rootFiles = files.filter(f => f.type === "file");
@@ -428,10 +429,12 @@ function AnalyzedProject({ githubURL, setActivePage }) {
 
         <br />
 
+        {/* Collaboration Insights */}
         <div className="file-card">
-          
+         <h3 style={{ marginBottom: '5px' }}>Collaboration Insights</h3>
+          <h4 style={{ marginTop: '5px' }}>PR Review Status</h4>
+          <p style={{ marginBottom: '5px' }}>Number of PRs reviewed per developer and average review time.</p>
         </div>
-
 
         {showScrollButton && (
           <button className="scroll-to-top" onClick={scrollToTop}>
