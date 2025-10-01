@@ -76,6 +76,9 @@ function AnalyzedProject({ githubURL, setActivePage }) {
   const [activity, setActivity] = useState(null);
   const [selectedCommits, setSelectedCommits] = useState([]);
   const [isTooltipModalOpen, setIsTooltipModalOpen] = useState(false);
+  const [pullRequests, setPullRequests] = useState([]);
+  const [devHours, setDevHours] = useState({});
+  const [devStreaks, setDevStreaks] = useState({});
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const repoName = githubURL?.split("/").slice(-1)[0] || "Project";
@@ -139,6 +142,77 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     fetchActivity(); 
     const interval = setInterval(fetchActivity, 30000); 
     return () => clearInterval(interval);
+  }, [githubURL]);
+
+  // Inside your component, after fetching activity
+  useEffect(() => {
+    if (!activity?.commitDetails) return;
+
+    // Prepare dev-hour matrix
+    const devHours = {}; // { dev: [hour0, hour1, ..., hour23] }
+
+    Object.values(activity.commitDetails).flat().forEach(commit => {
+      const dev = commit.login;
+      const hour = new Date(commit.date || commit.date).getHours(); // or commit.date
+      if (!devHours[dev]) devHours[dev] = Array(24).fill(0);
+      devHours[dev][hour]++;
+    });
+
+    setDevHours(devHours); // store in state
+  }, [activity]);
+
+  useEffect(() => {
+    if (!activity?.commitDetails) return;
+
+    const devDates = {}; // { dev: Set of YYYY-MM-DD }
+
+    Object.values(activity.commitDetails).flat().forEach(commit => {
+      const dev = commit.login;
+      const dateStr = new Date(commit.date || commit.date).toISOString().split("T")[0];
+      if (!devDates[dev]) devDates[dev] = new Set();
+      devDates[dev].add(dateStr);
+    });
+
+    const devStreaks = {};
+
+    Object.entries(devDates).forEach(([dev, datesSet]) => {
+      const dates = Array.from(datesSet).sort();
+      let longest = 0, current = 0, prev = null;
+
+      dates.forEach(d => {
+        const date = new Date(d);
+        if (prev && (date - prev === 86400000)) {
+          current++;
+        } else {
+          current = 1;
+        }
+        longest = Math.max(longest, current);
+        prev = date;
+      });
+
+      devStreaks[dev] = { longestStreak: longest };
+    });
+
+    setDevStreaks(devStreaks);
+  }, [activity]);
+
+  useEffect(() => {
+    const fetchPRs = async () => {
+      if (!githubURL) return;
+      try {
+        const res = await fetch("http://localhost:5000/api/prs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ githubURL }),
+        });
+        const data = await res.json();
+        setPullRequests(data);
+      } catch (err) {
+        console.error("Error fetching PRs:", err);
+      }
+    };
+
+    fetchPRs();
   }, [githubURL]);
 
   useEffect(() => {
@@ -427,6 +501,102 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         </div>
 
         <br />
+
+        {/* Collaboration Insights */}
+        <div className="file-card">
+          <h3 style={{ marginBottom: '5px' }}>Collaboration Insights</h3>
+          <h4>PR Review</h4>
+          <p style={{ marginBottom: '5px' }}>Displays each pull request’s details including the message, author, review comments, and current status (open or closed)</p>
+            {pullRequests.length === 0 ? (
+              <p className="no-pr">No PRs found</p>
+              ) : (
+              <div className="pr-list">
+                {pullRequests.map(pr => (
+                  <div key={pr.number} className="pr-card">
+                    <div className="pr-header">
+                      <a href={pr.url} target="_blank" rel="noopener noreferrer" className="pr-title">{pr.title}</a>
+                      <span className={`pr-status ${pr.state}`}>{pr.state.toUpperCase()}</span>
+                    </div>
+
+                    <p className="pr-author"><strong>Author:</strong> {pr.author}</p>
+                    {pr.merged_at && <p className="pr-merged"><strong>Merged at:</strong> {pr.merged_at}</p>}
+                    {pr.merged_by && <p className="pr-merged-by"><strong>Merged by:</strong> {pr.merged_by}</p>}
+                    {pr.draft && <p className="pr-draft">Draft PR</p>}
+                    {pr.milestone && <p className="pr-milestone"><strong>Milestone:</strong> {pr.milestone}</p>}
+
+                    {pr.labels.length > 0 && (
+                      <p className="pr-labels">
+                        <strong>Labels:</strong> {pr.labels.join(', ')}
+                      </p>
+                    )}
+                    {pr.assignees.length > 0 && (
+                      <p className="pr-assignees">
+                        <strong>Assignees:</strong> {pr.assignees.join(', ')}
+                      </p>
+                    )}
+
+                    <p className="pr-comments">
+                      <strong>Comments:</strong> {pr.comments} | <strong>Review Comments:</strong> {pr.review_comments}
+                    </p>
+
+                    <p className="pr-size">
+                      <strong>Changes:</strong> +{pr.additions} / -{pr.deletions} | <strong>Files changed:</strong> {pr.changed_files}
+                    </p>
+
+                    <details className="pr-reviews">
+                      <summary>Reviews ({pr.reviews.length})</summary>
+                      {pr.reviews.length === 0 ? (
+                        <p className="no-reviews">No reviews yet.</p>
+                      ) : (
+                        pr.reviews.map((r, idx) => (
+                          <div key={idx} className="review-card">
+                            <p><strong>{r.reviewer}</strong> - {r.state} <span className="review-date">({r.submitted_at})</span></p>
+                            {r.body && <p className="review-body">{r.body}</p>}
+                          </div>
+                        ))
+                      )}
+                    </details>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+
+        <br />
+
+        {/* Time Based Insights */}
+        {/* <div className="file-card">
+          <h3 style={{ marginBottom: '5px' }}>Time Based Insights</h3>
+          <h4>Active Hours Heatmap</h4>
+          <p>When does each dev commit? Useful for team coordination.</p>
+        </div> */}
+        <div className="file-card">
+  <h3>Time Based Insights</h3>
+  
+  <h4>Active Hours Heatmap</h4>
+  {Object.entries(devHours || {}).map(([dev, hours]) => (
+    <div key={dev}>
+      <strong>{dev}</strong>
+      <div className="heatmap-row">
+        {hours.map((count, i) => (
+          <div
+            key={i}
+            className="heatmap-cell"
+            style={{ backgroundColor: `rgba(0, 123, 255, ${count / Math.max(...hours) || 0})` }}
+            title={`Hour ${i}: ${count} commits`}
+          />
+        ))}
+      </div>
+    </div>
+  ))}
+
+  <h4>Longest Commit Streaks</h4>
+  {Object.entries(devStreaks || {}).map(([dev, stats]) => (
+    <p key={dev}><strong>{dev}:</strong> {stats.longestStreak} days</p>
+  ))}
+</div>
+
+
 
         {showScrollButton && (
           <button className="scroll-to-top" onClick={scrollToTop}>

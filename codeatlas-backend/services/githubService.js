@@ -6,9 +6,16 @@ import parseGitHubURL from "../utils/parseGitHubURL.js";
 
 console.log("GitHub token:", process.env.GITHUB_TOKEN?.slice(0,4) + "...");
 
+dotenv.config({ path: "../.env" }); 
+
+if (!process.env.GITHUB_TOKEN) {
+  throw new Error("❌ GITHUB_TOKEN not found. Did you create a .env file?");
+}
+
 const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN || "your-fallback-token-here"
+  auth: process.env.GITHUB_TOKEN,
 });
+
 
 // Recursive fetch of file tree
 async function getFilesRecursively(owner, repo, path = "", depth = 0, maxDepth = 2) {
@@ -209,6 +216,139 @@ async function fetchRepoActivity(githubURL) {
   return { contributors: contributorsDetailed, heatmap, commitDetails, fileChurn: sortedFiles };
 }
 
+// // Fetch PRs and their reviews
+// async function fetchPullRequests(githubURL) {
+//   const parsed = parseGitHubURL(githubURL);
+//   if (!parsed) throw new Error("Invalid GitHub URL");
+//   const { owner, repo } = parsed;
+
+//   let pullRequests = [];
+
+//   try {
+//     let page = 1;
+//     let fetchMore = true;
+
+//     while (fetchMore) {
+//       const { data: prs } = await octokit.rest.pulls.list({
+//         owner,
+//         repo,
+//         state: "all",
+//         per_page: 100,
+//         page
+//       });
+
+//       if (!prs.length) break;
+//       pullRequests = pullRequests.concat(prs);
+//       page++;
+//       if (prs.length < 100) fetchMore = false;
+//     }
+
+//     // For each PR, get reviews
+//     const prsWithReviews = await Promise.all(
+//       pullRequests.map(async pr => {
+//         const { data: reviews } = await octokit.rest.pulls.listReviews({
+//           owner,
+//           repo,
+//           pull_number: pr.number
+//         });
+
+//         return {
+//           number: pr.number,
+//           title: pr.title,
+//           state: pr.state,
+//           created_at: pr.created_at,
+//           merged_at: pr.merged_at,
+//           author: pr.user.login,
+//           url: pr.html_url,
+//           reviews: reviews.map(r => ({
+//             reviewer: r.user.login,
+//             state: r.state, // APPROVED, CHANGES_REQUESTED, COMMENTED
+//             submitted_at: r.submitted_at,
+//             body: r.body
+//           }))
+//         };
+//       })
+//     );
+
+//     return prsWithReviews;
+
+//   } catch (err) {
+//     console.error("❌ Failed to fetch PRs:", err.message);
+//     return [];
+//   }
+// }
+// Fetch PRs and their reviews with detailed info
+async function fetchPullRequests(githubURL) {
+  const parsed = parseGitHubURL(githubURL);
+  if (!parsed) throw new Error("Invalid GitHub URL");
+  const { owner, repo } = parsed;
+
+  let pullRequests = [];
+
+  try {
+    let page = 1;
+    let fetchMore = true;
+
+    // Fetch all PRs (pagination)
+    while (fetchMore) {
+      const { data: prs } = await octokit.rest.pulls.list({
+        owner,
+        repo,
+        state: "all",
+        per_page: 100,
+        page
+      });
+
+      if (!prs.length) break;
+      pullRequests = pullRequests.concat(prs);
+      page++;
+      if (prs.length < 100) fetchMore = false;
+    }
+
+    // Fetch reviews for each PR
+    const prsWithReviews = await Promise.all(
+      pullRequests.map(async pr => {
+        const { data: reviews } = await octokit.rest.pulls.listReviews({
+          owner,
+          repo,
+          pull_number: pr.number
+        });
+
+        return {
+          number: pr.number,
+          title: pr.title,
+          state: pr.state, // open, closed
+          created_at: pr.created_at,
+          merged_at: pr.merged_at,
+          author: pr.user.login,
+          url: pr.html_url,
+          draft: pr.draft,
+          labels: pr.labels.map(label => label.name),
+          assignees: pr.assignees.map(a => a.login),
+          comments: pr.comments,
+          review_comments: pr.review_comments,
+          merged_by: pr.merged_by ? pr.merged_by.login : null,
+          additions: pr.additions,
+          deletions: pr.deletions,
+          changed_files: pr.changed_files,
+          milestone: pr.milestone ? pr.milestone.title : null,
+          reviews: reviews.map(r => ({
+            reviewer: r.user.login,
+            state: r.state, // APPROVED, CHANGES_REQUESTED, COMMENTED
+            submitted_at: r.submitted_at,
+            body: r.body
+          }))
+        };
+      })
+    );
+
+    return prsWithReviews;
+
+  } catch (err) {
+    console.error("❌ Failed to fetch PRs:", err.message);
+    return [];
+  }
+}
 
 
-export { fetchRepoData, fetchRepoActivity };
+export { fetchRepoData, fetchRepoActivity, fetchPullRequests };

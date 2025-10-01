@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import { fetchRepoData, fetchRepoActivity } from "../services/githubService.js";
+import { fetchRepoData, fetchRepoActivity, fetchPullRequests } from "../services/githubService.js";
 import { saveRepoData } from "../services/dbService.js";
 
 // fetch files, repo info
@@ -35,6 +35,20 @@ router.post("/activity", async (req, res) => {
     res.json(activity);
   } catch (err) {
     console.err("Error in /api/activity:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Fetch PRs and review details
+router.post("/prs", async (req, res) => {
+  const { githubURL } = req.body;
+  if (!githubURL) return res.status(400).json({ error: "Github URL is required" });
+
+  try {
+    const prs = await fetchPullRequests(githubURL);
+    res.json(prs);
+  } catch (err) {
+    console.err("Error in /api/prs:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
