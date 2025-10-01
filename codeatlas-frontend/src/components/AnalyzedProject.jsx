@@ -144,31 +144,35 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     return () => clearInterval(interval);
   }, [githubURL]);
 
-  // Inside your component, after fetching activity
+  // Dev Hours
   useEffect(() => {
     if (!activity?.commitDetails) return;
 
-    // Prepare dev-hour matrix
-    const devHours = {}; // { dev: [hour0, hour1, ..., hour23] }
+    const devHours = {};
 
     Object.values(activity.commitDetails).flat().forEach(commit => {
       const dev = commit.login;
-      const hour = new Date(commit.date || commit.date).getHours(); // or commit.date
+      const date = new Date(commit.date);
+      if (isNaN(date)) return; // Skip bad dates
+      const hour = date.getHours();
       if (!devHours[dev]) devHours[dev] = Array(24).fill(0);
       devHours[dev][hour]++;
     });
 
-    setDevHours(devHours); // store in state
+    setDevHours(devHours);
   }, [activity]);
 
+  // Dev Streaks
   useEffect(() => {
     if (!activity?.commitDetails) return;
 
-    const devDates = {}; // { dev: Set of YYYY-MM-DD }
+    const devDates = {};
 
     Object.values(activity.commitDetails).flat().forEach(commit => {
       const dev = commit.login;
-      const dateStr = new Date(commit.date || commit.date).toISOString().split("T")[0];
+      const date = new Date(commit.date);
+      if (isNaN(date)) return; // Skip bad dates
+      const dateStr = date.toISOString().split("T")[0];
       if (!devDates[dev]) devDates[dev] = new Set();
       devDates[dev].add(dateStr);
     });
