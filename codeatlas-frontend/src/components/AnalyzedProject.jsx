@@ -4,7 +4,11 @@ import { IoChevronBackOutline } from "react-icons/io5";
 import ArchitectureGraph from "./ArchitectureGraph";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
 import { Tooltip as ReactTooltip } from 'react-tooltip';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line} from "recharts";
+import CommitsByDayTooltip from "./analyzedProject/CommitsByDayTooltip";
+import CommitsOverTimeTooltip from "./analyzedProject/CommitsOverTimeTooltip";
+import { PieChart, Pie, Cell, Legend } from "recharts";
+import CustomTooltip from "./analyzedProject/CustomTooltip";
 
 function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
   const rootFiles = files.filter(f => f.type === "file");
@@ -88,6 +92,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     setCollapsedFolders(prev => ({ ...prev, [folder]: !prev[folder] }));
   };
 
+  // Fetch Repo Data
   useEffect(() => {
     const fetchRepoData = async () => {
       if (!githubURL) return;
@@ -111,6 +116,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     fetchRepoData();
   }, [githubURL]);
 
+  // Fetch Activity Data with Polling
   useEffect(() => {
     let lastCommitSha = null; 
 
@@ -123,6 +129,9 @@ function AnalyzedProject({ githubURL, setActivePage }) {
           body: JSON.stringify({ githubURL }),
         });
         const data = await res.json();
+
+        console.log("📦 API /activity response:", data);
+        console.log("📝 commitDetails sample:", Object.values(data.commitDetails)?.[0]?.slice(0, 3));
 
         if (data?.commitDetails) {
           const allCommits = Object.values(data.commitDetails).flat();
@@ -200,6 +209,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     setDevStreaks(devStreaks);
   }, [activity]);
 
+  // Fetch Pull Requests
   useEffect(() => {
     const fetchPRs = async () => {
       if (!githubURL) return;
@@ -219,6 +229,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     fetchPRs();
   }, [githubURL]);
 
+  // Go To Top Page
   useEffect(() => {
     const container = document.querySelector(".analyzed-project-card"); 
     if (!container) return;
@@ -244,9 +255,102 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     }
   };
 
-  useEffect(() => {
-    console.log("showScrollButton:", showScrollButton);
-  }, [showScrollButton]);
+  // Compute total commits by hour across all devs
+  const totalHoursData = Array(24).fill(0);
+
+    Object.values(devHours || {}).forEach(hoursArr => {
+      hoursArr.forEach((count, hour) => {
+        totalHoursData[hour] += count;
+      });
+    });
+
+    const pieData = Object.entries(devHours).flatMap(([dev, hoursArr]) =>
+    hoursArr.map((count, hour) => ({
+      name: `${hour}:00`,
+      value: count,
+      contributors: count > 0 ? [{ dev, count }] : []
+    }))
+  ).filter(d => d.value > 0);
+
+
+  const renderLabel = ({ name }) => name;
+
+  // Some colors for pie slices
+  const COLORS = [
+    "#0088FE", "#00C49F", "#FFBB28", "#FF8042",
+    "#8884d8", "#82ca9d", "#ffc658", "#d0ed57",
+    "#a4de6c", "#8dd1e1", "#83a6ed", "#ff6f61",
+    "#ff9f40", "#36a2eb", "#4bc0c0", "#9966ff",
+    "#ffcd56", "#c9cbcf", "#f87171", "#34d399",
+    "#60a5fa", "#fbbf24", "#a78bfa", "#10b981"
+  ];
+
+  // Commits By Day Of Week
+  const commitsByDay = {};
+    if (activity?.commitDetails) {
+      Object.values(activity.commitDetails).flat().forEach(commit => {
+        const day = new Date(commit.date).toLocaleDateString('en-US', { weekday: 'short' });
+        commitsByDay[day] = (commitsByDay[day] || 0) + 1;
+      });
+    }
+
+    const commitsByDayData = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(day => {
+    const allCommits = activity?.commitDetails ? Object.values(activity.commitDetails).flat() : [];
+    
+    const commits = allCommits.filter(c => new Date(c.date).toLocaleDateString('en-US', { weekday: 'short' }) === day);
+    const contributors = [...new Set(commits.map(c => c.login))];
+
+    return {
+      day,
+      commits: commits.length,
+      contributors
+    };
+  });
+
+  // Commit Trend Over Time
+  const commitsOverTimeData = [];
+
+  if (activity?.commitDetails) {
+    // Flatten all commits
+    const allCommits = Object.values(activity.commitDetails).flat();
+
+    // Group by date
+    const commitsByDate = {};
+
+    allCommits.forEach(commit => {
+      const date = new Date(commit.date).toISOString().split("T")[0]; // YYYY-MM-DD
+      if (!commitsByDate[date]) commitsByDate[date] = { count: 0, contributors: new Set() };
+      commitsByDate[date].count += 1;
+      commitsByDate[date].contributors.add(commit.login);
+    });
+
+    // Convert to array for recharts
+    commitsOverTimeData.push(
+      ...Object.keys(commitsByDate)
+        .sort()
+        .map(date => ({
+          date,
+          commits: commitsByDate[date].count,
+          contributors: Array.from(commitsByDate[date].contributors)
+        }))
+    );
+  }
+
+    // Average Commit Time Per Contributor
+    const avgCommitTime = {};
+    if (activity?.commitDetails) {
+      Object.values(activity.commitDetails).flat().forEach(commit => {
+        const dev = commit.login;
+        const hour = new Date(commit.date).getHours();
+        if (!avgCommitTime[dev]) avgCommitTime[dev] = [];
+        avgCommitTime[dev].push(hour);
+      });
+    }
+
+    const avgCommitTimeData = Object.entries(avgCommitTime).map(([dev, hours]) => {
+      const avgHour = Math.round(hours.reduce((a,b) => a+b, 0) / hours.length);
+      return { dev, avgHour };
+  });
 
   return (
     <>
@@ -419,12 +523,14 @@ function AnalyzedProject({ githubURL, setActivePage }) {
               <h3 style={{ marginBottom: '5px' }}>Productivity and Contributions</h3>
               <p style={{ marginBottom: '10px' }}>Displays each contributor's activity - commits, lines added/removed and files changed - while highlighting the top contributor and overall team contributions.</p>
               <h4>Top Contributor</h4>
-              <div className="contributor-card">
-                <img src={topContributor.avatar_url} alt={topContributor.login} className="contributor-avatar" />
+              <div className="contributors-container">
+                <div className="contributor-card">
+                  <img src={topContributor.avatar_url} alt={topContributor.login} className="contributor-avatar" />
                   <div className="contributor-info">
                     <span className="contributor-name">{topContributor.login}</span>
                     <span className="contributor-commits">{topContributor.commits} commits</span>
                   </div>
+                </div>
               </div>
 
               <br />
@@ -434,7 +540,8 @@ function AnalyzedProject({ githubURL, setActivePage }) {
                 {activity.contributors
                   .sort((a, b) => b.commits - a.commits)
                   .map(c => (
-                  <div key={c.login} className="contributor-card">
+                  <div className="contributor-container">
+                    <div key={c.login} className="contributor-card">
                     <img src={c.avatar_url} alt={c.login} className="contributor-avatar" />
                     <div className="contributor-info">
                       <span className="contributor-name">{c.login}</span>
@@ -470,6 +577,7 @@ function AnalyzedProject({ githubURL, setActivePage }) {
                           style={{ width: `${(c.filesChanged / maxFiles) * 100}%`, backgroundColor: "#2196f3" }}
                         />
                       </div>
+                    </div>
                     </div>
                   </div>
                 ))}
@@ -569,38 +677,91 @@ function AnalyzedProject({ githubURL, setActivePage }) {
         <br />
 
         {/* Time Based Insights */}
-        {/* <div className="file-card">
-          <h3 style={{ marginBottom: '5px' }}>Time Based Insights</h3>
-          <h4>Active Hours Heatmap</h4>
-          <p>When does each dev commit? Useful for team coordination.</p>
-        </div> */}
         <div className="file-card">
-  <h3>Time Based Insights</h3>
-  
-  <h4>Active Hours Heatmap</h4>
-  {Object.entries(devHours || {}).map(([dev, hours]) => (
-    <div key={dev}>
-      <strong>{dev}</strong>
-      <div className="heatmap-row">
-        {hours.map((count, i) => (
-          <div
-            key={i}
-            className="heatmap-cell"
-            style={{ backgroundColor: `rgba(0, 123, 255, ${count / Math.max(...hours) || 0})` }}
-            title={`Hour ${i}: ${count} commits`}
-          />
-        ))}
-      </div>
-    </div>
-  ))}
+          <h3 style={{ marginBottom: '5px' }}>Time Based Insights</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: '20px' }}>
+            <div>
+              <h4>Active Commit Hours</h4>
+              <p>This chart visualizes the hours of the day when contributors are most active, showing the distribution of commits across different times.</p>
+              <div style={{ width: "100%", height: 400 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      label={renderLabel}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-  <h4>Longest Commit Streaks</h4>
-  {Object.entries(devStreaks || {}).map(([dev, stats]) => (
-    <p key={dev}><strong>{dev}:</strong> {stats.longestStreak} days</p>
-  ))}
-</div>
+            <div>
+              <h4>Longest Commit Streaks</h4>
+              <p>Shows the longest consecutive days each contributor has made commits, highlighting consistency and dedication over time.</p>
+              {Object.entries(devStreaks || {}).map(([dev, stats]) => (
+                // <p key={dev}><strong>{dev}:</strong> {stats.longestStreak} days</p>
+                <div className="contributors-container">
+                  <div className="contributor-card" key={dev}>
+                    <div className="contributor-info">
+                      <span className="contributor-name">{dev}</span>
+                      <span className="contributor-commits">Longest Streak: {stats.longestStreak} days</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
+          <br />
 
+          <h4 style={{ marginBottom: '5px' }}>Commits By Day Of Week</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={commitsByDayData}>
+              <XAxis dataKey="day" />
+              <YAxis />
+              <Tooltip content={<CommitsByDayTooltip />} />
+              <Bar dataKey="commits" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <br />
+
+          <h4 style={{ marginBottom: '5px' }}>Commit Trend Over Time</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={commitsOverTimeData}>
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+              <YAxis />
+              <Tooltip content={<CommitsOverTimeTooltip />} />
+              <Line type="monotone" dataKey="commits" stroke="#82ca9d" />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <br />
+          <h4>Average Commit Time Per Contributor</h4>
+            <div className="contributors-metrics">
+              {avgCommitTimeData.map(d => (
+                <div className="contributor-container" key={d.dev}>
+                  <div className="contributor-card">
+                    <div className="contributor-info">
+                      <span className="contributor-name">{d.dev}</span>
+                      <span className="contributor-commits"><b>Avg Commit Time:</b> {d.avgHour}:00</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+        </div>
 
         {showScrollButton && (
           <button className="scroll-to-top" onClick={scrollToTop}>

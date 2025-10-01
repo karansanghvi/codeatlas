@@ -343,6 +343,15 @@
   margin-top: 5px;
 }
 
+.contributors-container {
+  max-height: 400px; /* adjust as needed */
+  overflow-y: auto;  /* vertical scroll */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 5px; /* prevent scrollbar overlap */
+}
+
 .contributor-card {
   display: flex;
   padding: 10px;
@@ -546,6 +555,88 @@
   padding: 2px 6px;
   margin-right: 4px;
   font-size: 12px;
+}
+
+/* Time Based Analysis */
+/* Feature 1 */
+.heatmap-wrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: 20px auto;
+  font-family: Arial, sans-serif;
+}
+
+.hours-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-left: 100px; /* space for dev names */
+  margin-bottom: 5px;
+}
+
+.hour-label {
+  width: 30px;
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+}
+
+.heatmap-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heatmap-container.scrollable {
+  max-height: 400px; /* adjust based on your layout */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+
+.dev-row {
+  display: flex;
+  align-items: center;
+}
+
+.dev-name {
+  width: 100px;
+  text-align: right;
+  margin-right: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+.heatmap-row {
+  display: flex;
+  gap: 2px;
+}
+
+/* .heatmap-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+} */
+ .heatmap-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+
+
+.heatmap-cell:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
 }
 
 
