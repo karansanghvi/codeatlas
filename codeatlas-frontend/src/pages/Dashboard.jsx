@@ -20,6 +20,9 @@ function Dashboard() {
   const [searchError, setSearchError] = useState("");
   const [userProjects, setUserProjects] = useState([]);
   const [selectedRepoURL, setSelectedRepoURL] = useState(null);
+    const [githubURL, setGithubURL] = useState(""); 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
 
   const navigate = useNavigate();
 
@@ -185,8 +188,10 @@ function Dashboard() {
             <DashboardHome
               fullName={fullName}
               setFullName={setFullName}
-              isAnalyzing={false}
-              setIsAnalyzing={() => {}}
+              githubURL={githubURL}       
+              setGithubURL={setGithubURL} 
+              isAnalyzing={isAnalyzing}
+              setIsAnalyzing={setIsAnalyzing}
               setActivePage={setActivePage}  
             />
           ) : activePage === "Projects" ? (
