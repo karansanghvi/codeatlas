@@ -710,7 +710,6 @@ function AnalyzedProject({ githubURL, setActivePage }) {
               <h4>Longest Commit Streaks</h4>
               <p>Shows the longest consecutive days each contributor has made commits, highlighting consistency and dedication over time.</p>
               {Object.entries(devStreaks || {}).map(([dev, stats]) => (
-                // <p key={dev}><strong>{dev}:</strong> {stats.longestStreak} days</p>
                 <div className="contributors-container">
                   <div className="contributor-card" key={dev}>
                     <div className="contributor-info">

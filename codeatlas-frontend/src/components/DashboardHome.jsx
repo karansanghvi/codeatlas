@@ -120,7 +120,7 @@ function DashboardHome({
           <button 
             onClick={() => setShowPrivateModal(false)} 
             className="project-button"
-          >
+          > 
             Ok
           </button>
         </div>
