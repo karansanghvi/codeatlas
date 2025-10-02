@@ -5,7 +5,6 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
 import DashboardHome from "../components/DashboardHome";
 import Projects from "../components/Projects";
-import Analytics from "../components/Analytics";
 import Settings from "../components/Settings";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -120,7 +119,7 @@ function Dashboard() {
       <aside className="sidebar">
         <div className="logo">CodeAtlas</div>
         <ul className="sidebar-menu">
-          {["Dashboard", "Projects", "Analytics", "Settings"].map((item) => (
+          {["Dashboard", "Projects", "Settings"].map((item) => (
             <li
               key={item}
               className={activePage === item ? "active" : ""}
@@ -185,7 +184,6 @@ function Dashboard() {
           />
         )}
         {activePage === "Projects" && <Projects />}
-        {activePage === "Analytics" && <Analytics />} 
         {activePage === "Settings" && <Settings />}
       </main>
     </div>

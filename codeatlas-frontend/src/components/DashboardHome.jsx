@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import AnalyzedProject from "./AnalyzedProject";
 import "../assets/styles/dashboard.css";
+import { auth, db } from "../firebase/auth";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 
 function DashboardHome({
   fullName,
@@ -11,9 +13,12 @@ function DashboardHome({
   setIsAnalyzing,
   setActivePage,
 }) {
+
+  const [showPrivateModal, setShowPrivateModal] = useState(false);
+
   const handleAnalyzeClick = async () => {
     if (githubURL.trim() === "") {
-      alert("Please enter a github url");
+      alert("Please enter a GitHub URL");
       return;
     }
 
@@ -27,17 +32,31 @@ function DashboardHome({
       const data = await res.json();
 
       if (res.ok) {
-        if (data.repoInfo.notAccessible) {
+        if (data.repoInfo.notAccessible || data.repoInfo.private) {
           console.log("Repo is private and not accessible.");
+          setShowPrivateModal(true);
+          setGithubURL("");
+          return; 
         } else {
-          console.log(
-            `🔒 Repo is ${data.repoInfo.private ? "Private" : "Public"}`
-          );
+          console.log(`Repo is Public ✅`);
           setIsAnalyzing(true);
+
+          const user = auth.currentUser;
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, {
+              analyzedRepos: arrayUnion({
+                url: githubURL,
+                analyzedAt: new Date(),
+              }),
+            });
+            console.log("Repo URL saved for user.");
+
+            setGithubURL("");
+          }
         }
-      } else {
-        console.error("❌ Error analyzing repo:", data.error);
       }
+
     } catch (err) {
       console.error("❌ Failed to analyze repo:", err);
     }
@@ -46,6 +65,7 @@ function DashboardHome({
   console.log("Full Name in DashboardHome:", setFullName);
 
   return (
+    <>
     <div>
       {isAnalyzing ? (
         <AnalyzedProject githubURL={githubURL} setActivePage={setActivePage} />
@@ -90,6 +110,23 @@ function DashboardHome({
         </>
       )}
     </div>
+
+    {showPrivateModal && (
+      <div className="modal-overlay">
+        <div className="modal">
+          <h2>Private Repository</h2>
+          <p>This repository is private and cannot be analyzed. Please make it public to proceed with the analysis.</p>
+          <br />
+          <button 
+            onClick={() => setShowPrivateModal(false)} 
+            className="project-button"
+          >
+            Ok
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
