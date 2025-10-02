@@ -95,11 +95,6 @@ function Projects() {
       />
       <h2 className="login-message">No Projects Found.</h2>
       <br />
-      {/* <button className="project-button">
-        <Link to="/login" style={{ textDecoration: 'none', color: 'white' }}>
-          Go to Login
-        </Link>
-      </button> */}
     </div>
   );
 

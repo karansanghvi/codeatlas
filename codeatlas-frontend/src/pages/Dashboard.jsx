@@ -1,42 +1,43 @@
 import React, { useEffect, useState } from "react";
 import "../assets/styles/dashboard.css";
-import { getAuth, signOut } from "firebase/auth";
+import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
 import DashboardHome from "../components/DashboardHome";
 import Projects from "../components/Projects";
 import Settings from "../components/Settings";
+import AnalyzedProject from "../components/AnalyzedProject";
 import { Link, useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const [fullName, setFullName] = useState(() => {
-    return localStorage.getItem("fullName") || "";
-  });
-  const [githubURL, setGithubURL] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [fullName, setFullName] = useState(() => localStorage.getItem("fullName") || "");
   const [activePage, setActivePage] = useState("Dashboard");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [searchError, setSearchError] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userProjects, setUserProjects] = useState([]);
+  const [selectedRepoURL, setSelectedRepoURL] = useState(null);
 
   const navigate = useNavigate();
 
+  // Fetch logged-in user data
   useEffect(() => {
-    const fetchUserName = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
+    const unsubscribe = onAuthStateChanged(getAuth(), async (user) => {
       if (user) {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          setFullName(userDoc.data().fullName);
+          const data = userDoc.data();
+          setFullName(data.fullName || "");
+          setUserProjects(data.analyzedRepos || []);
         }
       }
-    };
-    fetchUserName();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ function Dashboard() {
     }
   }, [fullName]);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -64,7 +66,7 @@ function Dashboard() {
   const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    setSearchError(""); 
+    setSearchError("");
 
     if (query.trim() === "") {
       setSearchResults([]);
@@ -90,7 +92,8 @@ function Dashboard() {
     if (e.key === "Enter") {
       if (searchResults.length > 0) {
         const project = searchResults[0];
-        window.open(project.github_url, "_blank");
+        setSelectedRepoURL(project.github_url);
+        setShowSearchModal(false);
         setRecentSearches(prev => [project.name, ...prev.filter(name => name !== project.name)]);
         setSearchQuery("");
         setSearchResults([]);
@@ -110,117 +113,147 @@ function Dashboard() {
     } catch (error) {
       console.error("Error signing out:", error);
     }
-  }
+  };
 
   return (
     <>
-    <div className="dashboard-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="logo">CodeAtlas</div>
-        <ul className="sidebar-menu">
-          {["Dashboard", "Projects", "Settings"].map((item) => (
-            <li
-              key={item}
-              className={activePage === item ? "active" : ""}
-              onClick={() => {
-                setActivePage(item);
-                setIsAnalyzing(false); 
-              }}
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      </aside>
-
-      {/* Main Content */}
-      <main className="main-content">
-        {/* Top bar */}
-        <div className="top-bar">
-          <input 
-            type="text" 
-            placeholder="Search..." 
-            className="search-bar" 
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchKeyDown}
-            autoFocus
-          />
-          {fullName ? (
-            <div className="dropdown">
-              <button
-                className="dashboard-button"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+      <div className="dashboard-container">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="logo">CodeAtlas</div>
+          <ul className="sidebar-menu">
+            {["Dashboard", "Projects", "Settings"].map((item) => (
+              <li
+                key={item}
+                className={activePage === item ? "active" : ""}
+                onClick={() => setActivePage(item)}
               >
-                {fullName} ▾
-              </button>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </aside>
 
-              {dropdownOpen && (
-                <div className="dropdown-menu">
-                  <Link to="/profile" style={{ textDecoration: 'none' }}>
-                    <button className="dropdown-item">View Profile</button>
-                  </Link>
-                  <button className="dropdown-item" onClick={handleLogout}>Logout</button>
-                </div>
-              )}
+        {/* Main Content */}
+        <main className="main-content">
+          {/* Top bar */}
+          <div className="top-bar">
+            <div className="search-input-container">
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="search-bar" 
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                onFocus={() => setShowSearchModal(true)}
+              />
+              <span className="shortcut-hint">Ctrl + K</span>
             </div>
-          ) : (
-            <Link to="/login">
-              <button className="dashboard-button">Login</button>
-            </Link>
-          )}
-        </div>
+            {fullName ? (
+              <div className="dropdown">
+                <button
+                  className="dashboard-button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  {fullName} ▾
+                </button>
 
-        {activePage === "Dashboard" && (
-          <DashboardHome
-            fullName={fullName}
-            setFullName={setFullName}
-            githubURL={githubURL}
-            setGithubURL={setGithubURL}
-            isAnalyzing={isAnalyzing}
-            setIsAnalyzing={setIsAnalyzing}
-            setActivePage={setActivePage}  
-          />
-        )}
-        {activePage === "Projects" && <Projects />}
-        {activePage === "Settings" && <Settings />}
-      </main>
-    </div>
+                {dropdownOpen && (
+                  <div className="dropdown-menu">
+                    <Link to="/profile" style={{ textDecoration: 'none' }}>
+                      <button className="dropdown-item">View Profile</button>
+                    </Link>
+                    <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login">
+                <button className="dashboard-button">Login</button>
+              </Link>
+            )}
+          </div>
 
-    {showSearchModal && (
-      <div className="search-modal-overlay">
-        <div className="search-modal">
-          <div className="search-header">
-            <input
-              type="text"
-              placeholder="Search documentation"
-              className="search-input"
-              autoFocus
+          {/* Main content area */}
+          {selectedRepoURL ? (
+            <AnalyzedProject 
+              githubURL={selectedRepoURL} 
+              setActivePage={() => setSelectedRepoURL(null)} 
             />
-            <span className="esc-hint">esc</span>
-          </div>
+          ) : activePage === "Dashboard" ? (
+            <DashboardHome
+              fullName={fullName}
+              setFullName={setFullName}
+              isAnalyzing={false}
+              setIsAnalyzing={() => {}}
+              setActivePage={setActivePage}  
+            />
+          ) : activePage === "Projects" ? (
+            <Projects />
+          ) : (
+            <Settings />
+          )}
+        </main>
+      </div>
 
-          <div className="recent-section">
-            <h4>Recent</h4>
-            {searchQuery === "" && recentSearches.length === 0 && <p style = {{color: 'black'}}>No Recent Searches</p>}
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="search-modal-overlay">
+          <div className="search-modal">
+            <div className="search-header">
+              <input
+                type="text"
+                placeholder="Search documentation"
+                className="search-input"
+                autoFocus
+              />
+              <span className="esc-hint">esc</span>
+            </div>
 
-            <ul className="recent-list">
-              {searchQuery === ""
-                ? recentSearches.map((item, idx) => <li key={idx}>{item}</li>)
-                : searchResults.length > 0
-                  ? searchResults.map(project => (
-                      <li key={project.id} onClick={() => window.open(project.github_url, "_blank")}>
-                        {project.name}
-                      </li>
-                    ))
-                  : searchError && <li>{searchError}</li>
-              }
-            </ul>
+            <div className="recent-section">
+              <h4>Recent</h4>
+              <ul className="recent-list">
+                {searchQuery === "" ? (
+                  recentSearches.length === 0 ? (
+                    userProjects.length > 0 ? (
+                      userProjects.map((repo, idx) => (
+                        <li
+                          key={idx}
+                          onClick={() => {
+                            setSelectedRepoURL(repo.url);
+                            setShowSearchModal(false);
+                          }}
+                        >
+                          {repo.url.split("/").pop()}
+                        </li>
+                      ))
+                    ) : (
+                      <li style={{ color: "black" }}>No Projects Found</li>
+                    )
+                  ) : (
+                    recentSearches.map((item, idx) => <li key={idx}>{item}</li>)
+                  )
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((project) => (
+                    <li
+                      key={project.id}
+                      onClick={() => {
+                        setSelectedRepoURL(project.github_url);
+                        setShowSearchModal(false);
+                      }}
+                    >
+                      {project.name}
+                    </li>
+                  ))
+                ) : (
+                  <li style={{ color: "black" }}>{searchError}</li>
+                )}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }
