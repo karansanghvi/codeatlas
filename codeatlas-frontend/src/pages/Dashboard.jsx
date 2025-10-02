@@ -183,11 +183,18 @@ function Dashboard() {
             />
           ) : activePage === "Dashboard" ? (
             <DashboardHome
-              fullName={fullName}
-              setFullName={setFullName}
-              isAnalyzing={false}
-              setIsAnalyzing={() => {}}
-              setActivePage={setActivePage}  
+              // fullName={fullName}
+              // setFullName={setFullName}
+              // isAnalyzing={false}
+              // setIsAnalyzing={() => {}}
+              // setActivePage={setActivePage}  
+               fullName={fullName}
+  setFullName={setFullName}
+  githubURL={selectedRepoURL}
+  setGithubURL={setSelectedRepoURL}
+  isAnalyzing={false}
+  setIsAnalyzing={() => {}}
+  setActivePage={setActivePage}
             />
           ) : activePage === "Projects" ? (
             <Projects />
