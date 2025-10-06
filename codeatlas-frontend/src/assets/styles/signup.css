@@ -59,6 +59,40 @@
   transition: border 0.3s ease;
 }
 
+.input-box .phone-number {
+  background-color: #F3F3F3;
+  border: 1px solid #ddd;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+}
+
+.input-box .phone-number input {
+  background-color: #F3F3F3 !important;
+  border: none;
+  outline: none;
+  height: 5px;
+}
+
+.input-box .phone-number input:focus {
+  outline: none;
+}
+
+.input-box .phone-number:focus-within {
+  border: 1px solid #FF4B00;
+}
+
+.input-box .phone-number input:hover {
+  background-color: #F3F3F3 !important;
+}
+
+.input-box .phone-number .flag-dropdown {
+  border: none;
+  background: transparent;
+}
+
 .input-box input:focus {
   outline: none;
   border: 1px solid #FF4B00;

@@ -1,16 +1,21 @@
 import React, { useState } from "react";
-import "../assets/styles/signup.css";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebase/auth";
 import bcrypt from "bcryptjs";
+import PhoneInput from "react-phone-input-2";
+import CustomAlert from "../components/custom/CustomAlert";
+import "../assets/styles/signup.css";
+import logo from "../assets/images/logo.png";
+import "react-phone-input-2/lib/style.css"; 
 
 function Signup() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "" });
 
   const navigate = useNavigate();
 
@@ -28,10 +33,17 @@ function Signup() {
         password: hashedPassword,
       });
 
-      alert("Account created successfully!");
+      setAlert({
+        message: "Account created successfully!!",
+        type: "success"
+      });
       navigate("/");
     } catch (error) {
-      alert("❌ " + error.message);
+      setAlert({
+        message: "Unable to create account. Please try again.",
+        type: "error"
+      });
+      console.error("Unable to create account: ", error.message);
       setFullName("");
       setPhone("");
       setEmail("");
@@ -43,7 +55,14 @@ function Signup() {
     <>
     <header className="app-header">
       <Link to="/" style={{ textDecoration: 'none' }}>
-        <h1 className="title">CodeAtlas</h1>
+        <div className="logo">
+          <div>
+            <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
+          </div>
+          <div>
+            <h1 className="title">CodeAtlas</h1>
+          </div>
+        </div>
       </Link>
     </header>
     <div className="signup-screen">
@@ -59,10 +78,24 @@ function Signup() {
                 value={fullName} onChange={(e) => setFullName(e.target.value)} style={{ marginRight: '10px' }} required />
             </div>
 
-            <div className="input-box">
+            {/* <div className="input-box">
               <label htmlFor="phoneNumber">Phone Number:</label>
               <input type="text" id="phoneNumber" placeholder="+91 XXXXX XXXXX"
                 value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div> */}
+            <div className="input-box">
+              <label htmlFor="phoneNumber">Phone Number:</label>
+              <PhoneInput
+                country={"in"}          
+                value={phone}
+                onChange={setPhone}
+                inputProps={{
+                  name: "phoneNumber",
+                  id: "phoneNumber",
+                  required: true,
+                }}
+                className="phone-number"
+              />
             </div>
           </div>
 
@@ -85,6 +118,15 @@ function Signup() {
       </div>
     </div>
     <br/> <br/>
+
+    <CustomAlert
+      message={alert.message}
+      type={alert.type}
+      onClose={() => setAlert({
+        message: "",
+        type: ""
+      })}
+    />
     </>
   );
 }

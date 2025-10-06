@@ -4,7 +4,7 @@ import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
 import { FaHandPointer, FaMinus, FaPlus, FaExclamationCircle } from "react-icons/fa";
 import { GrPowerReset } from "react-icons/gr";
-import "../assets/styles/analyzedProjects.css";
+import "../../assets/styles/analyzedProjects.css";
 
 cytoscape.use(dagre);
 

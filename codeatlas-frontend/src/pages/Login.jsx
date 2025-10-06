@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import "../assets/styles/login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/auth";
+import logo from "../assets/images/logo.png";
+import "../assets/styles/login.css";
+import CustomAlert from "../components/custom/CustomAlert";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "" });
 
   const navigate = useNavigate();
 
@@ -14,10 +17,16 @@ function Login() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      alert("Login successful!");
+      setAlert({
+        message: "Login successful!!",
+        type: "success"
+      });
       navigate("/");
     } catch (error) {
-      alert("User not found or incorrect credentials.");
+      setAlert({
+        message: "User not found or incorrect credentials. Please try again.",
+        type: "error"
+      });
       console.log("User not found", error);
       setEmail("");
       setPassword("");
@@ -28,7 +37,14 @@ function Login() {
     <>
     <header className="app-header">
       <Link to="/" style={{ textDecoration: 'none' }}>
-        <h1 className="logo">CodeAtlas</h1>
+        <div className="logo">
+          <div>
+            <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
+          </div>
+          <div>
+            <h1>CodeAtlas</h1>
+          </div>
+        </div>
       </Link>
     </header>
     <div className="login-screen">
@@ -53,6 +69,15 @@ function Login() {
         </form>
       </div>
     </div>
+
+    <CustomAlert
+      message={alert.message}
+      type={alert.type}
+      onClose={() => setAlert({
+        message: "",
+        type: ""
+      })}
+    />
     </>
   );
 }

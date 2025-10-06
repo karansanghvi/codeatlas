@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../assets/styles/analyzedProjects.css";
 import { IoChevronBackOutline } from "react-icons/io5";
-import ArchitectureGraph from "./ArchitectureGraph";
+import ArchitectureGraph from "./analyzedProject/ArchitectureGraph";
 import ReactCalendarHeatmap from "react-calendar-heatmap";
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line} from "recharts";

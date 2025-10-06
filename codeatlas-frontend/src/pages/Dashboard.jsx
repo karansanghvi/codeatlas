@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import "../assets/styles/dashboard.css";
 import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
+import { Link, useNavigate } from "react-router-dom";
 import DashboardHome from "../components/DashboardHome";
 import Projects from "../components/Projects";
 import Settings from "../components/Settings";
 import AnalyzedProject from "../components/AnalyzedProject";
-import { Link, useNavigate } from "react-router-dom";
+import "../assets/styles/dashboard.css";
+import logo from "../assets/images/logo.png";
 
 function Dashboard() {
   const [fullName, setFullName] = useState(() => localStorage.getItem("fullName") || "");
@@ -20,9 +21,8 @@ function Dashboard() {
   const [searchError, setSearchError] = useState("");
   const [userProjects, setUserProjects] = useState([]);
   const [selectedRepoURL, setSelectedRepoURL] = useState(null);
-    const [githubURL, setGithubURL] = useState(""); 
+  const [githubURL, setGithubURL] = useState(""); 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
 
   const navigate = useNavigate();
 
@@ -111,6 +111,7 @@ function Dashboard() {
     try {
       await signOut(auth);
       localStorage.removeItem("fullName");
+      localStorage.removeItem("userData");
       setFullName("");
       navigate("/login");
     } catch (error) {
@@ -123,7 +124,14 @@ function Dashboard() {
       <div className="dashboard-container">
         {/* Sidebar */}
         <aside className="sidebar">
-          <div className="logo">CodeAtlas</div>
+          <div className="logo">
+            <div>
+              <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
+            </div>
+            <div>
+              <h1>CodeAtlas</h1>
+            </div>
+          </div>
           <ul className="sidebar-menu">
             {["Dashboard", "Projects", "Settings"].map((item) => (
               <li

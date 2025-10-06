@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import "../assets/styles/profile.css";
 import { Link } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/auth";
+import logo from "../assets/images/logo.png";
+import "../assets/styles/profile.css";
 
 function Profile() {
   const [userData, setUserData] = useState(() => {
@@ -15,6 +16,38 @@ function Profile() {
 
   const [isEditing, setIsEditing] = useState(false); // toggle edit mode
 
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     const auth = getAuth();
+  //     const user = auth.currentUser;
+
+  //     if (user) {
+  //       try {
+  //         const userRef = doc(db, "users", user.uid);
+  //         const userSnap = await getDoc(userRef);
+
+  //         if (userSnap.exists()) {
+  //           const data = userSnap.data();
+  //           const fetchedData = {
+  //             fullName: data.fullName || "",
+  //             phone: data.phone || "",
+  //             emailAddress: data.email || user.email || "",
+  //           };
+  //           setUserData(fetchedData);
+  //           localStorage.setItem("userData", JSON.stringify(fetchedData));
+  //         } else {
+  //           console.log("No such user document!");
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching user data:", error);
+  //       }
+  //     }
+  //   };
+
+  //   if (!userData.fullName && !userData.emailAddress) {
+  //     fetchUserData();
+  //   }
+  // }, []);
   useEffect(() => {
     const fetchUserData = async () => {
       const auth = getAuth();
@@ -36,6 +69,7 @@ function Profile() {
             localStorage.setItem("userData", JSON.stringify(fetchedData));
           } else {
             console.log("No such user document!");
+            setUserData({ fullName: "", phone: "", emailAddress: user.email });
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -43,10 +77,9 @@ function Profile() {
       }
     };
 
-    if (!userData.fullName && !userData.emailAddress) {
-      fetchUserData();
-    }
+    fetchUserData(); 
   }, []);
+
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -88,7 +121,14 @@ function Profile() {
     <>
       <header className="app-header">
         <Link to="/" style={{ textDecoration: "none" }}>
-          <h1 className="title">CodeAtlas</h1>
+          <div className="logo">
+            <div>
+              <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
+            </div>
+            <div>
+              <h1>CodeAtlas</h1>
+            </div>
+          </div>
         </Link>
       </header>
       <div className="profile-screen">

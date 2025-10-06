@@ -4,10 +4,15 @@
   background-color: #f9fafb; 
 }
 
-.app-header h1 {
-  color: black;
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 12px;
-  font-size: 24px;
+}
+
+.logo h1 {
+  color: black;
 }
 
 .login-screen {

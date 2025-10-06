@@ -96,16 +96,16 @@ function DashboardHome({
 
           {/* Cards Section */}
           <section className="cards-section">
-            <div className="card">Recent Project</div>
-            <div className="card">Resources</div>
-            <div className="card">Performance</div>
-            <div className="card">To-Do List</div>
+           <div className="card"></div>
+           <div className="card"></div>
+           <div className="card"></div>
+           <div className="card"></div>
           </section>
 
           {/* Bottom Section */}
           <section className="bottom-section">
-            <div className="card">Recent Projects</div>
-            <div className="card">Upcoming Lessons</div>
+            <div className="card"></div>
+            <div className="card"></div>
           </section>
         </>
       )}

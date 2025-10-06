@@ -22,9 +22,14 @@
 }
 
 .logo {
+  display: flex;
+  gap: 5px;
+}
+
+.logo h1 {
   font-size: 24px;
+  align-items: center;
   font-weight: bold;
-  margin-bottom: 40px;
 }
 
 .sidebar-menu li {
