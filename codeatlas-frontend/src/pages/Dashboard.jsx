@@ -133,7 +133,7 @@ function Dashboard() {
             </div>
           </div>
           <ul className="sidebar-menu">
-            {["Dashboard", "Projects", "Settings"].map((item) => (
+            {["Dashboard", "Projects"].map((item) => (
               <li
                 key={item}
                 className={activePage === item ? "active" : ""}
@@ -204,9 +204,7 @@ function Dashboard() {
             />
           ) : activePage === "Projects" ? (
             <Projects />
-          ) : (
-            <Settings />
-          )}
+          ) : null}
         </main>
       </div>
 
