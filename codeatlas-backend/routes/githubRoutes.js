@@ -1,23 +1,16 @@
 import express from "express";
 const router = express.Router();
-
 import { fetchRepoData, fetchRepoActivity, fetchPullRequests } from "../services/githubService.js";
 import { saveRepoData } from "../services/dbService.js";
 
 // fetch files, repo info
 router.post("/files", async (req, res) => {
-  const { githubURL } = req.body;
-  console.log("📥 Incoming request:", githubURL);
-
-  if (!githubURL) {
-    return res.status(400).json({ error: "GitHub URL is required" });
-  }
+  const { githubURL, token } = req.body;
+  if (!githubURL || !token) return res.status(400).json({ error: "GitHub URL and token are required" });
 
   try {
-    const data = await fetchRepoData(githubURL);
-
+    const data = await fetchRepoData(githubURL, token);
     await saveRepoData(githubURL, data.repoInfo, data.contributors, data.languages, data.files);
-
     res.json(data);
   } catch (err) {
     console.error("Error in /api/files:", err.message);
@@ -25,32 +18,31 @@ router.post("/files", async (req, res) => {
   }
 });
 
-// fetch repository activity (heatmap + contributor analysis)
 router.post("/activity", async (req, res) => {
-  const { githubURL } = req.body;
-  if (!githubURL) return res.status(400).json({ error: "Github URL is required" });
+  const { githubURL, token } = req.body;
+  if (!githubURL || !token) return res.status(400).json({ error: "GitHub URL and token are required" });
 
   try {
-    const activity = await fetchRepoActivity(githubURL);
+    const activity = await fetchRepoActivity(githubURL, token);
     res.json(activity);
   } catch (err) {
-    console.err("Error in /api/activity:", err.message);
+    console.error("Error in /api/activity:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Fetch PRs and review details
 router.post("/prs", async (req, res) => {
-  const { githubURL } = req.body;
-  if (!githubURL) return res.status(400).json({ error: "Github URL is required" });
+  const { githubURL, token } = req.body;
+  if (!githubURL || !token) return res.status(400).json({ error: "GitHub URL and token are required" });
 
   try {
-    const prs = await fetchPullRequests(githubURL);
+    const prs = await fetchPullRequests(githubURL, token);
     res.json(prs);
   } catch (err) {
-    console.err("Error in /api/prs:", err.message);
+    console.error("Error in /api/prs:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 export default router;
+

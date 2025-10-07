@@ -1,39 +1,27 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 import { Octokit } from "@octokit/rest";
 import parseGitHubURL from "../utils/parseGitHubURL.js";
 
-console.log("GitHub token:", process.env.GITHUB_TOKEN?.slice(0,4) + "...");
-
-dotenv.config({ path: "../.env" }); 
-
-if (!process.env.GITHUB_TOKEN) {
-  throw new Error("❌ GITHUB_TOKEN not found. Did you create a .env file?");
+// Create Octokit instance per request using the provided token
+function getOctokit(token) {
+  if (!token) throw new Error("GitHub token is required");
+  return new Octokit({ auth: token });
 }
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
-});
-
-
 // Recursive fetch of file tree
-async function getFilesRecursively(owner, repo, path = "", depth = 0, maxDepth = 2) {
+async function getFilesRecursively(octokit, owner, repo, path = "", depth = 0, maxDepth = 2) {
   if (depth > maxDepth) return [];
 
   try {
     const { data } = await octokit.rest.repos.getContent({ owner, repo, path });
-
     const files = await Promise.all(
       data.map(async (item) => {
         if (item.type === "dir") {
-          const children = await getFilesRecursively(owner, repo, item.path, depth + 1, maxDepth);
+          const children = await getFilesRecursively(octokit, owner, repo, item.path, depth + 1, maxDepth);
           return { ...item, children };
         }
         return item;
       })
     );
-
     return files;
   } catch (err) {
     console.error(`❌ Failed to fetch path "${path}":`, err.message);
@@ -41,7 +29,7 @@ async function getFilesRecursively(owner, repo, path = "", depth = 0, maxDepth =
   }
 }
 
-// Format GitHub API response
+// Map GitHub API data
 function mapFiles(data) {
   return data.map((item) =>
     item.type === "dir"
@@ -61,49 +49,34 @@ function mapFiles(data) {
   );
 }
 
-// Main service to get repo info
-async function fetchRepoData(githubURL) {
+// Fetch repo data
+async function fetchRepoData(githubURL, token) {
+  const octokit = getOctokit(token);
   const parsed = parseGitHubURL(githubURL);
   if (!parsed) throw new Error("Invalid GitHub URL");
 
   const { owner, repo } = parsed;
-  console.log(`👤 Owner: ${owner}, 📦 Repo: ${repo}`);
-
-  let repoInfo = {};
-  let contributors = [];
-  let languages = {};
-  let files = [];
+  let repoInfo = {}, contributors = [], languages = [], files = [];
 
   try {
-    // Repo info
     const res = await octokit.rest.repos.get({ owner, repo });
     repoInfo = res.data;
 
-    // Contributors
     try {
       contributors = (await octokit.rest.repos.listContributors({ owner, repo, per_page: 10 })).data;
-    } catch (err) {
-      console.warn("⚠️ Failed to fetch contributors:", err.message);
-    }
+    } catch {}
 
-    // Languages
     try {
       languages = (await octokit.rest.repos.listLanguages({ owner, repo })).data;
-    } catch (err) {
-      console.warn("⚠️ Failed to fetch languages:", err.message);
-    }
+    } catch {}
 
-    // File tree
-    const rawFiles = await getFilesRecursively(owner, repo, "", 0, 2);
+    const rawFiles = await getFilesRecursively(octokit, owner, repo);
     files = mapFiles(rawFiles);
 
   } catch (err) {
     if (err.status === 404) {
-      console.warn("⚠️ Repo not found or private without access");
       repoInfo = { private: true, notAccessible: true, name: repo, owner: { login: owner } };
-    } else {
-      throw err;
-    }
+    } else throw err;
   }
 
   return { repoInfo, contributors, languages, files };

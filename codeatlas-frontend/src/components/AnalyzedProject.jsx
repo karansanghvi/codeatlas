@@ -9,6 +9,8 @@ import CommitsByDayTooltip from "./analyzedProject/CommitsByDayTooltip";
 import CommitsOverTimeTooltip from "./analyzedProject/CommitsOverTimeTooltip";
 import { PieChart, Pie, Cell, Legend } from "recharts";
 import CustomTooltip from "./analyzedProject/CustomTooltip";
+import { auth, db } from "../firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 function FileTree({ files, level = 0, collapsedFolders = {}, toggleFolder }) {
   const rootFiles = files.filter(f => f.type === "file");
@@ -68,7 +70,7 @@ const ChurnTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-function AnalyzedProject({ githubURL, setActivePage }) {
+function AnalyzedProject({ githubURL, setActivePage, githubToken }) {
   const [files, setFiles] = useState([]);
   const [repoInfo, setRepoInfo] = useState(null);
   const [contributors, setContributors] = useState([])
@@ -92,66 +94,159 @@ function AnalyzedProject({ githubURL, setActivePage }) {
     setCollapsedFolders(prev => ({ ...prev, [folder]: !prev[folder] }));
   };
 
+  // const [owner, repo] = getOwnerAndRepo(githubURL);
+
+  // Fetch GitHub token from Firestore if missing
+  const fetchToken = async () => {
+    if (githubToken) return githubToken;
+
+    const user = auth.currentUser;
+    if (!user) return null;
+
+    try {
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? docSnap.data().githubToken : null;
+    } catch (err) {
+      console.error("Error fetching token from Firestore:", err);
+      return null;
+    }
+  };
+
   // Fetch Repo Data
+  // useEffect(() => {
+  //   const fetchRepoData = async () => {
+  //     if (!owner || !repo) {
+  //       console.warn("Invalid GitHub URL, skipping repo fetch.");
+  //       return;
+  //     }
+
+  //     const token = await fetchToken();
+  //     if (!token) {
+  //       console.warn("No GitHub token available!");
+  //       return;
+  //     }
+
+  //     setLoading(true);
+  //     try {
+  //       // Fetch repo details
+  //       const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+  //         headers: { Authorization: `token ${token}` },
+  //       });
+  //       const repoData = await repoRes.json();
+  //       setRepoData(repoData);
+
+  //       // Fetch files, contributors, languages from your backend
+  //       const res = await fetch("http://localhost:5000/api/files", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ githubURL, token }),
+  //       });
+  //       const data = await res.json();
+
+  //       if (!data || data.error) throw new Error(data?.error || "API /files returned error");
+
+  //       setFiles(data.files || []);
+  //       setRepoInfo(data.repoInfo || {});
+  //       setContributors(data.contributors || []);
+  //       setLanguages(data.languages || {});
+  //     } catch (err) {
+  //       console.error("Error fetching repo data:", err);
+  //       setFiles([]);
+  //       setRepoInfo(null);
+  //       setRepoData(null);
+  //       setContributors([]);
+  //       setLanguages({});
+  //     }
+  //     setLoading(false);
+  //   };
+
+  //   fetchRepoData();
+  // }, [githubURL]);
+
   useEffect(() => {
-    const fetchRepoData = async () => {
-      if (!githubURL) return;
-      setLoading(true);
-      try {
-        const res = await fetch("http://localhost:5000/api/files", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ githubURL }),
-        });
-        const data = await res.json();
-        setFiles(data.files || []);
-        setRepoInfo(data.repoInfo);
-        setContributors(data.contributors || []);
-        setLanguages(data.languages || {});
-      } catch (err) {
-        console.error("Error fetching repo data: ", err);
+  if (!githubURL) return;
+
+  const fetchRepoData = async () => {
+    setLoading(true);
+    try {
+      const token = githubToken || await fetchToken(); // Fetch token if not provided
+      if (!token) {
+        console.warn("No GitHub token available!");
+        return;
       }
+
+      const res = await fetch("http://localhost:5000/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubURL, token }),
+      });
+
+      const data = await res.json();
+
+      if (!data || data.error) throw new Error(data?.error || "API /files returned error");
+
+      setFiles(data.files || []);
+      setRepoInfo(data.repoInfo || {});
+      setContributors(data.contributors || []);
+      setLanguages(data.languages || {});
+    } catch (err) {
+      console.error("Error fetching repo data:", err);
+      setFiles([]);
+      setRepoInfo(null);
+      setContributors([]);
+      setLanguages({});
+    } finally {
       setLoading(false);
-    };
-    fetchRepoData();
-  }, [githubURL]);
+    }
+  };
+
+  fetchRepoData();
+}, [githubURL, githubToken]);
 
   // Fetch Activity Data with Polling
-  useEffect(() => {
-    let lastCommitSha = null; 
+useEffect(() => {
+  if (!githubURL || !githubToken) return;
 
-    const fetchActivity = async () => {
-      if (!githubURL) return;
-      try {
-        const res = await fetch("http://localhost:5000/api/activity", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ githubURL }),
-        });
-        const data = await res.json();
+  let lastCommitSha = null;
 
-        console.log("📦 API /activity response:", data);
-        console.log("📝 commitDetails sample:", Object.values(data.commitDetails)?.[0]?.slice(0, 3));
+  const fetchActivity = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubURL, token: githubToken }),
+      });
 
-        if (data?.commitDetails) {
-          const allCommits = Object.values(data.commitDetails).flat();
-          const latestCommit = allCommits[0]; 
+      const data = await res.json();
 
-          if (latestCommit && latestCommit.sha !== lastCommitSha) {
-            console.log("🚀 New commit detected:", latestCommit);
-            lastCommitSha = latestCommit.sha;
-            setActivity(data); 
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching activity:", err);
+      if (!data || data.error) {
+        console.error("API /activity error:", data?.error);
+        setActivity(null);
+        return;
       }
-    };
 
-    fetchActivity(); 
-    const interval = setInterval(fetchActivity, 30000); 
-    return () => clearInterval(interval);
-  }, [githubURL]);
+      if (data.commitDetails) {
+        const allCommits = Object.values(data.commitDetails).flat();
+        const latestCommit = allCommits[0];
+
+        if (latestCommit && latestCommit.sha !== lastCommitSha) {
+          lastCommitSha = latestCommit.sha;
+          setActivity(data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching activity:", err);
+      setActivity(null);
+    }
+  };
+
+  fetchActivity();
+  const interval = setInterval(fetchActivity, 30000);
+  return () => clearInterval(interval);
+}, [githubURL, githubToken]);
+
+
 
   // Dev Hours
   useEffect(() => {
@@ -211,23 +306,30 @@ function AnalyzedProject({ githubURL, setActivePage }) {
 
   // Fetch Pull Requests
   useEffect(() => {
-    const fetchPRs = async () => {
-      if (!githubURL) return;
-      try {
-        const res = await fetch("http://localhost:5000/api/prs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ githubURL }),
-        });
-        const data = await res.json();
-        setPullRequests(data);
-      } catch (err) {
-        console.error("Error fetching PRs:", err);
-      }
-    };
+  if (!githubURL) return;
 
-    fetchPRs();
-  }, [githubURL]);
+  const fetchPRs = async () => {
+    try {
+      const token = githubToken || await fetchToken();
+      if (!token) return;
+
+      const res = await fetch("http://localhost:5000/api/prs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ githubURL, token }),
+      });
+
+      const data = await res.json();
+      setPullRequests(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching PRs:", err);
+      setPullRequests([]);
+    }
+  };
+
+  fetchPRs();
+}, [githubURL, githubToken]);
+
 
   // Go To Top Page
   useEffect(() => {

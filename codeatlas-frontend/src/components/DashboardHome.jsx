@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AnalyzedProject from "./AnalyzedProject";
 import "../assets/styles/dashboard.css";
 import { auth, db } from "../firebase/auth";
@@ -15,18 +15,77 @@ function DashboardHome({
 }) {
 
   const [showPrivateModal, setShowPrivateModal] = useState(false);
+  const [githubToken, setGithubToken] = useState("");
 
+  useEffect(() => {
+    const token = localStorage.getItem("githubToken");
+    if (token) setGithubToken(token);
+  }, []);
+
+  // const handleAnalyzeClick = async () => {
+  //   if (githubURL.trim() === "") {
+  //     alert("Please enter a GitHub URL");
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await fetch("http://localhost:5000/api/files", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ githubURL }),
+  //     });
+
+  //     const data = await res.json();
+
+  //     if (res.ok) {
+  //       if (data.repoInfo.notAccessible || data.repoInfo.private) {
+  //         console.log("Repo is private and not accessible.");
+  //         setShowPrivateModal(true);
+  //         setGithubURL("");
+  //         return; 
+  //       } else {
+  //         console.log(`Repo is Public ✅`);
+  //         setIsAnalyzing(true);
+
+  //         const user = auth.currentUser;
+  //         if (user) {
+  //           const userRef = doc(db, "users", user.uid);
+  //           await updateDoc(userRef, {
+  //             analyzedRepos: arrayUnion({
+  //               url: githubURL,
+  //               analyzedAt: new Date(),
+  //             }),
+  //           });
+  //           console.log("Repo URL saved for user.");
+
+  //           setGithubURL("");
+  //         }
+  //       }
+  //     }
+
+  //   } catch (err) {
+  //     console.error("❌ Failed to analyze repo:", err);
+  //   }
+  // };
   const handleAnalyzeClick = async () => {
     if (githubURL.trim() === "") {
       alert("Please enter a GitHub URL");
       return;
     }
 
+    if (!githubToken) {
+      alert("Please enter your GitHub token in Settings before analyzing a repo.");
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:5000/api/files", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ githubURL }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `token ${githubToken}`
+         },
+        body: JSON.stringify({ githubURL, token: githubToken }),
       });
 
       const data = await res.json();
@@ -55,10 +114,14 @@ function DashboardHome({
             setGithubURL("");
           }
         }
+      } else {
+        console.error("Failed to analyze repo:", data.error);
+        alert(data.error);
       }
 
     } catch (err) {
       console.error("❌ Failed to analyze repo:", err);
+      alert("Failed to analyze repo. Check token or URL.");
     }
   };
 
@@ -68,7 +131,7 @@ function DashboardHome({
     <>
     <div>
       {isAnalyzing ? (
-        <AnalyzedProject githubURL={githubURL} setActivePage={setActivePage} />
+        <AnalyzedProject githubURL={githubURL} setActivePage={setActivePage} githubToken={githubToken} />
       ) : (
         <>
           {/* Welcome Section */}

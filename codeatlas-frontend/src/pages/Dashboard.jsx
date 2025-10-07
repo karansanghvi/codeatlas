@@ -23,6 +23,11 @@ function Dashboard() {
   const [selectedRepoURL, setSelectedRepoURL] = useState(null);
   const [githubURL, setGithubURL] = useState(""); 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // GitHub token state
+  const [githubToken, setGithubToken] = useState(
+    localStorage.getItem("githubToken") || ""
+  );
 
   const navigate = useNavigate();
 
@@ -44,28 +49,23 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (fullName) {
-      localStorage.setItem("fullName", fullName);
-    }
+    if (fullName) localStorage.setItem("fullName", fullName);
   }, [fullName]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts for search
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setShowSearchModal(true);
       }
-
-      if (e.key === 'Escape') {
-        setShowSearchModal(false);
-      }
+      if (e.key === 'Escape') setShowSearchModal(false);
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Search handling
   const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -79,12 +79,9 @@ function Dashboard() {
     try {
       const res = await fetch("http://localhost:5000/api/repositories");
       const projects = await res.json();
-
-      const filtered = projects.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase())
+      setSearchResults(
+        projects.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
       );
-
-      setSearchResults(filtered);
     } catch (err) {
       console.error(err);
       setSearchError("Failed to fetch projects");
@@ -107,9 +104,8 @@ function Dashboard() {
   };
 
   const handleLogout = async () => {
-    const auth = getAuth();
     try {
-      await signOut(auth);
+      await signOut(getAuth());
       localStorage.removeItem("fullName");
       localStorage.removeItem("userData");
       setFullName("");
@@ -125,15 +121,11 @@ function Dashboard() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="logo">
-            <div>
-              <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
-            </div>
-            <div>
-              <h1>CodeAtlas</h1>
-            </div>
+            <img src={logo} alt="CodeAtlas Logo" width={40} height={30} />
+            <h1>CodeAtlas</h1>
           </div>
           <ul className="sidebar-menu">
-            {["Dashboard", "Projects", "Settings"].map((item) => (
+            {["Dashboard", "Projects", "Settings"].map(item => (
               <li
                 key={item}
                 className={activePage === item ? "active" : ""}
@@ -147,7 +139,7 @@ function Dashboard() {
 
         {/* Main Content */}
         <main className="main-content">
-          {/* Top bar */}
+          {/* Top Bar */}
           <div className="top-bar">
             <div className="search-input-container">
               <input 
@@ -169,7 +161,6 @@ function Dashboard() {
                 >
                   {fullName} ▾
                 </button>
-
                 {dropdownOpen && (
                   <div className="dropdown-menu">
                     <Link to="/profile" style={{ textDecoration: 'none' }}>
@@ -186,7 +177,7 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Main content area */}
+          {/* Main Area */}
           {selectedRepoURL ? (
             <AnalyzedProject 
               githubURL={selectedRepoURL} 
@@ -201,12 +192,13 @@ function Dashboard() {
               isAnalyzing={isAnalyzing}
               setIsAnalyzing={setIsAnalyzing}
               setActivePage={setActivePage}  
+              githubToken={githubToken}  // pass token
             />
           ) : activePage === "Projects" ? (
             <Projects />
-          ) : (
-            <Settings />
-          )}
+          ) : activePage === "Settings" ? (
+            <Settings setToken={setGithubToken} /> // pass setter
+          ) : null}
         </main>
       </div>
 
