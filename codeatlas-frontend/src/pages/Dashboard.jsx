@@ -23,11 +23,6 @@ function Dashboard() {
   const [selectedRepoURL, setSelectedRepoURL] = useState(null);
   const [githubURL, setGithubURL] = useState(""); 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // GitHub token state
-  const [githubToken, setGithubToken] = useState(
-    localStorage.getItem("githubToken") || ""
-  );
 
   const navigate = useNavigate();
 
@@ -125,7 +120,7 @@ function Dashboard() {
             <h1>CodeAtlas</h1>
           </div>
           <ul className="sidebar-menu">
-            {["Dashboard", "Projects", "Settings"].map(item => (
+            {["Dashboard", "Projects"].map((item) => (
               <li
                 key={item}
                 className={activePage === item ? "active" : ""}
@@ -192,12 +187,9 @@ function Dashboard() {
               isAnalyzing={isAnalyzing}
               setIsAnalyzing={setIsAnalyzing}
               setActivePage={setActivePage}  
-              githubToken={githubToken}  // pass token
             />
           ) : activePage === "Projects" ? (
             <Projects />
-          ) : activePage === "Settings" ? (
-            <Settings setToken={setGithubToken} /> // pass setter
           ) : null}
         </main>
       </div>

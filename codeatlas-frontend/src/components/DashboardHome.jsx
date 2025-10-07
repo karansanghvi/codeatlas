@@ -157,19 +157,45 @@ function DashboardHome({
             </div>
           </section>
 
-          {/* Cards Section */}
+          <br />
+
+          <h2 className="section-title">Features Of CodeAtlas</h2>
+
           <section className="cards-section">
-           <div className="card"></div>
-           <div className="card"></div>
-           <div className="card"></div>
-           <div className="card"></div>
+            <div className="card">
+              <h3>Repo Overview</h3>
+              <p>Get a complete snapshot of your repository, including its current status, main programming languages, top contributors, and overall file structure for quick insights.</p>
+            </div>
+
+            <div className="card">
+              <h3>Code Architecture</h3>
+              <p>Visualize your entire codebase with an interactive graph showing files, classes, functions, and their dependencies. Easily understand relationships, spot complex areas, and plan refactors.</p>
+            </div>
+
+            <div className="card">
+              <h3>Activity & Analysis</h3>
+              <p>Track repository activity over the past year with a commit heatmap. Click on any date to see detailed commits and contributors, and view a list of all contributors with their total commit counts.</p>
+            </div>
+
+            <div className="card">
+              <h3>Productivity & Contributions</h3>
+              <p>Monitor each contributor’s activity, including commits, lines added/removed, and files changed. Highlight top contributors and see code churn for the most frequently modified files.</p>
+            </div>
           </section>
 
           {/* Bottom Section */}
           <section className="bottom-section">
-            <div className="card"></div>
-            <div className="card"></div>
+            <div className="card">
+              <h3>Collaboration Insights</h3>
+              <p>Review pull request activity in detail, including PR messages, authors, review comments, and current status, to improve collaboration and code quality.</p>
+            </div>
+
+            <div className="card">
+              <h3>Time-Based Insights</h3>
+              <p>Analyze commit patterns over time with charts showing active hours, commits by day, trends, streaks, and average commit times per contributor to understand productivity patterns.</p>
+            </div>
           </section>
+
         </>
       )}
     </div>
