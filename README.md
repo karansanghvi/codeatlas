@@ -104,7 +104,9 @@ Start the frontend
   cd codeatlas-frontend
   npm run dev
 ```
-Open http://localhost:3000 to explore CodeAtlas.## Screenshots
+Open http://localhost:3000 to explore CodeAtlas.
+
+## Screenshots
 
 ![Dashboard Screenshot](./assets/codeatlas_1.png)
 
