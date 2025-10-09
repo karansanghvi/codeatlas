@@ -1,5 +1,5 @@
 
-# CodeAtlas - Your Codebase, Visualized
+# 👨‍💻 CodeAtlas - Your Codebase, Visualized
 
 CodeAtlas is an interactive analytics and visualization platform for software repositories. It helps developers, teams, and managers explore their codebases visually, track contributions, analyze productivity, and uncover valuable insights about collaboration and code evolution.
 
