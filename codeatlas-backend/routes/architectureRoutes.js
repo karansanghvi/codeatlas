@@ -10,19 +10,28 @@ router.post("/architecture", async (req, res) => {
   if (!githubURL) return res.status(400).json({ error: "githubURL required" });
 
   try {
+    console.log("Received GitHub URL:", githubURL);
     const repoId = await getRepoIdByURL(githubURL);
+    console.log("Repo ID:", repoId);
+
     if (repoId) {
       const cached = await getArchitecture(repoId);
-      if (cached) return res.json({ cached: true, graph: cached });
+      if (cached) {
+        console.log("Returning cached architecture");
+        return res.json({ cached: true, graph: cached });
+      }
     }
 
+    console.log("Building architecture...");
     const graph = await buildArchitecture(githubURL);
+    console.log("Graph built:", graph);
     res.json({ cached: false, graph });
   } catch (err) {
-    console.error("Error building architecture:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Error building architecture:", err);
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
+
 
 router.get("/architecture", async (req, res) => {
   const githubURL = req.query.githubURL;
